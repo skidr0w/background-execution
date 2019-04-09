@@ -1,33 +1,29 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
+  <head>
+    <meta charset="UTF-8" />
     <title>Web worker</title>
     <script src="https://unpkg.com/fast-unique-numbers@3.0.7/build/es5/bundle.js"></script>
     <script src="https://unpkg.com/worker-timers-broker@5.0.8/build/es5/bundle.js"></script>
     <script src="https://unpkg.com/worker-timers@5.0.10/build/es5/bundle.js"></script>
-</head>
-<body>
+  </head>
+  <body>
+    <p>
+      This method uses web workers to schedule the background execution. Uses
+      <a href="https://github.com/chrisguttandin/worker-timers"
+        ><code>worker-timers</code></a
+      >
+      under the hood.
+    </p>
 
-<p>This method uses web workers to schedule the background execution. Uses <a href="https://github.com/chrisguttandin/worker-timers"><code>worker-timers</code></a> under the hood.</p>
-
-<script>
-  const TICK = 500;
-  let lastTick = new Date();
-  workerTimers.setInterval(function () {
-    const now = new Date();
-    const timeSinceLastTick = now.getTime() - lastTick.getTime();
-    const delta = timeSinceLastTick - TICK;
-    const { visibilityState } = document;
-    console.log(
-      now,
-      timeSinceLastTick,
-      delta,
-      visibilityState
-    );
-    lastTick = now
-  }, TICK)
-</script>
-
-</body>
+    <script src="functions.js"></script>
+    <script>
+      measure("window.setInterval", function(callback) {
+        const intervalId = workerTimers.setInterval(callback, 1);
+        return function() {
+          workerTimers.clearInterval(intervalId);
+        };
+      });
+    </script>
+  </body>
 </html>

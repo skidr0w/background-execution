@@ -1,28 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
+  <head>
+    <meta charset="UTF-8" />
     <title>Simple</title>
-</head>
-<body>
-<p>This method uses <code>window.setInterval</code> to run every 1 second.</p>
-<script>
-    const TICK = 500;
-    let lastTick = new Date();
-    window.setInterval(function () {
-      const now = new Date();
-      const timeSinceLastTick = now.getTime() - lastTick.getTime();
-      const delta = timeSinceLastTick - TICK;
-      const { visibilityState } = document;
-      console.log(
-        now,
-        timeSinceLastTick,
-        delta,
-        visibilityState
-      );
-      lastTick = now
-    }, TICK)
-</script>
-
-</body>
+  </head>
+  <body>
+    <p>
+      This method uses <code>window.setInterval</code> to run every 1 second.
+    </p>
+    <script src="functions.js"></script>
+    <script>
+      measure("window.setInterval", function(callback) {
+        const intervalId = window.setInterval(callback, 1);
+        return function() {
+          window.clearInterval(intervalId);
+        };
+      });
+    </script>
+  </body>
 </html>

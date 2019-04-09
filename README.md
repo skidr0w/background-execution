@@ -8,7 +8,7 @@ I'm trying to find different methods to run code in the background in populer br
 
 2. Web worker
 
-    Web worker implementation[1] of setInterval. By using a web worker, we can circumvent the throttling of the browser and can execute code more often. When the tab is closed, the worker gets terminated.
+    Web worker implementation[1] of setInterval. By using a web worker, we can circumvent the throttling in some browser and can execute our callback more often. When the tab is closed, the worker gets terminated.
     
 3. Service worker
 
