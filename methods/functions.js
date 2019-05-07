@@ -16,7 +16,7 @@ function formatMilliseconds(ms) {
   return hours + ":" + minutes + ":" + seconds;
 }
 
-function measure(methodName, methodFunction) {
+function measure(methodName, methodFunction, callback) {
   const originalDocumentTitle = document.title;
   let cleanupFunction = null;
   let dataPoints = [];
@@ -49,12 +49,7 @@ function measure(methodName, methodFunction) {
       console.log(
         "Recording finished after " + formatMilliseconds(totalDurationMs)
       );
-      console.table(
-        dataPoints.map(p => {
-          p.date = p.date.toISOString();
-          return p;
-        })
-      );
+      callback(dataPoints);
     } else {
       console.log(
         "Recording finished but there were no data points measured. Make sure your method function invokes the callback function"
@@ -63,17 +58,12 @@ function measure(methodName, methodFunction) {
   }
 
   function tick() {
-    const now = new Date();
-    const timeSinceLastTick =
-      dataPoints.length > 0
-        ? now.getTime() - dataPoints[dataPoints.length - 1].date.getTime()
-        : 0;
+    const date = new Date();
     const timeSinceFirstTick =
-      dataPoints.length > 0 ? now.getTime() - dataPoints[0].date.getTime() : 0;
+      dataPoints.length > 0 ? date.getTime() - dataPoints[0].date.getTime() : 0;
     dataPoints.push({
-      date: now,
-      timeSinceLastTick: formatMilliseconds(timeSinceLastTick),
-      timeSinceFirstTick: formatMilliseconds(timeSinceFirstTick)
+      date,
+      timeSinceFirstTick,
     });
   }
 
