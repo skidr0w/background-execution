@@ -12,5 +12,18 @@ I'm trying to find different methods to run code in the background in populer br
     
 3. Service worker
 
+    Service workers can use setInterval to run concurrently in the background, even when the spawning tab is closed, but there is no guarantee, that the Browser kill the service worker.
+
 
 [1]: https://github.com/chrisguttandin/worker-timers
+
+## Testing results
+
+OS | UA | setInterval | worker-timers | Service worker setInterval
+-|-|-|-|-
+macOS Mojave 10.14 | Chrome 74 | Throttles immediatly to 1tick/s | can run indefinitely as long as tab is not closed, arbitrary ticks/s
+macOS Mojave 10.14 | Firefox 66 | Throttles immediatly to 1tick/s | can run indefinitely as long as tab is not closed, arbitrary ticks/s | -
+macOS Mojave 10.14 | Safari 11 | Throttles immediatly to 1tick/s | - | -
+iOS 12 | Mobile Safari | - | - | -
+Android | Chrome | - | - | -
+Android | Firefox | - | - | -
