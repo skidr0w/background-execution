@@ -1,5 +1,5 @@
 \documentclass[article,type=bsc,colorback,accentcolor=tud9c]{tudthesis}
-\usepackage{ngerman}
+%\usepackage{ngerman}
 
 \newcommand{\getmydate}{%
   \ifcase\month%
@@ -22,18 +22,64 @@
   \makethesistitle
   \affidavit{Yannick Reifschneider}
 
-  \section{Abstract}
+  \tableofcontents
+
+  \newpage
+  
+  \section{Introduction}
+
+  \subsection{Motivation}
+  
+  \subsection{The JavaScript execution model}
+
+  \subsection{The event loop}
+  
+  \section{Analysis of different background execution methods}
+
+  \subsection{Timers}
+
+  \subsection{Web workers}
+
+  \subsection{Service workers}
+
+  \subsection{Sensor readings}
+
+  \section{Web browser behaviour regarding the different methods}
+
+  \subsection{Desktop web browsers}
+
+  \subsubsection{Google Chrome}
+
+  \subsubsection{Mozilla Firefox}
+
+  \subsubsection{Apple Safari}
+
+  \subsection{Mobile web browsers}
+
+  \subsubsection{iOS Mobile Safari}
+
+  \subsubsection{Chrome for Android}
+
+  \subsubsection{Firefox for Android}
+  
+  \section{Tracing of background execution on popular websites}
+
+  Using the Alexa Top 100 Website list.
+  
+  \subsection{Method for measuring background execution}
+
+  Maybe with puppeteer or with \href{https://github.com/mozilla/OpenWPM}{OpenWPM} or with simple hooking the JavaScript functions
+  
+  \subsection{Evaluation of findings}
+
+  These are the findings from my research.
+
+  \section{Conclusion}
 
   
+
   
-  \section{Foobar}
-  
-  \section{Verwendung der Klasse}
+
    
 
-
-  \subsection{Klassenoptionen}
-   
-  \subsection{Befehle}
-   
 \end{document}
