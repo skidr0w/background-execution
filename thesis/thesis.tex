@@ -1,5 +1,6 @@
 \documentclass[article,type=bsc,colorback,accentcolor=tud9c]{tudthesis}
 %\usepackage{ngerman}
+\usepackage{hyperref}
 
 \newcommand{\getmydate}{%
   \ifcase\month%
@@ -25,15 +26,13 @@
   \tableofcontents
 
   \newpage
-  
   \section{Introduction}
 
   \subsection{Motivation}
   
-  \subsection{The JavaScript execution model}
+  \subsection{The JavaScript execution model and the event loop}
 
-  \subsection{The event loop}
-  
+  \newpage
   \section{Analysis of different background execution methods}
 
   \subsection{Timers}
@@ -44,6 +43,7 @@
 
   \subsection{Sensor readings}
 
+  \newpage
   \section{Web browser behaviour regarding the different methods}
 
   \subsection{Desktop web browsers}
@@ -61,19 +61,20 @@
   \subsubsection{Chrome for Android}
 
   \subsubsection{Firefox for Android}
-  
+
+  \newpage
   \section{Tracing of background execution on popular websites}
 
   Using the Alexa Top 100 Website list.
   
   \subsection{Method for measuring background execution}
 
-  Maybe with puppeteer or with \href{https://github.com/mozilla/OpenWPM}{OpenWPM} or with simple hooking the JavaScript functions
+  Maybe with puppeteer or with OpenWPM\footnote{\url{https://github.com/mozilla/OpenWPM}} or with simple hooking the JavaScript functions
   
   \subsection{Evaluation of findings}
 
-  These are the findings from my research.
-
+  
+  \newpage
   \section{Conclusion}
 
   
