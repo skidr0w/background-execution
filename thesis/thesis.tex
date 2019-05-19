@@ -70,7 +70,7 @@
   \end{itemize}
   
   \subsection{Sensor readings}
-
+  
   The Sensors API allows to read from device sensors like accelerometer, gyroscope oder ambient light sensor. You can define the frequency in which you want to receive new sensor readings.
 
   \subsection{Websocket connection}
@@ -98,6 +98,8 @@
   AmbientLightSensor has to be enabled via flags.
   
   \subsubsection{Mozilla Firefox}
+
+  Firefox does not support the Sensors API, but implements an older specification of the ambient light sensor API. This older API does not allow to specify a frequency in which the event handler is called. Also, this API is no longer enabled by default since Firefox 60 due to privacy concerns. Also Firefox does not call the event handlers, when the tab is in the background
 
   \subsubsection{Apple Safari}
 

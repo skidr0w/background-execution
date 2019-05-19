@@ -2,10 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Web worker</title>
-    <script src="https://unpkg.com/fast-unique-numbers@3.0.7/build/es5/bundle.js"></script>
-    <script src="https://unpkg.com/worker-timers-broker@5.0.8/build/es5/bundle.js"></script>
-    <script src="https://unpkg.com/worker-timers@5.0.10/build/es5/bundle.js"></script>
+    <title>Sensors</title>
     <script src="https://unpkg.com/d3@5.9.2/dist/d3.min.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/metrics-graphics@2.15.6/dist/metricsgraphics.css"/>
     <script src="https://unpkg.com/metrics-graphics@2.15.6/dist/metricsgraphics.min.js"></script>
@@ -19,19 +16,30 @@
     <script src="functions.js"></script>
     <script>
       let cb = null;
-      let sensor = new AmbientLightSensor({ frequency: 10 });
-      sensor.onerror = function (error) {
-        console.error(error);
-      };
-      sensor.onreading = function (event) {
-        console.log('illuminance', event.target.illuminance);
+      if ("AmbientLightSensor" in window) {
+        let sensor = new AmbientLightSensor({frequency: 10});
+        sensor.onerror = function (error) {
+          console.error(error);
+        };
+        sensor.onreading = function (event) {
+          console.log('illuminance', event.target.illuminance);
+          if (cb) cb();
+        };
+        sensor.start();
+      }
+      window.ondevicelight = function (event) {
+        console.log('devicelight', event);
         if (cb) cb();
       };
-      sensor.start();
+      window.ondevicemotion = function (event) {
+        console.log('devicemotion', event);
+        if (cb) cb();
+      };
+
       measure("sensor", function(callback) {
         console.log('start');
         cb = callback;
-        return function() {
+        return function () {
           cb = null;
           console.log('stop')
         };
