@@ -28,33 +28,84 @@
   \newpage
   \section{Introduction}
 
+  
+  
   \subsection{Motivation}
+
+  \begin{itemize}
+  \item Possible side channel attack (i.e. via sensor readings)
+  \item A XSS vulnerability in a popular website could use the visitors as a botnet for a DDOS attack
+  \end{itemize}
   
   \subsection{The JavaScript execution model and the event loop}
 
+  Why a simple infinite loop is not feasable: Web page becomes unresponsive. If you don't yield back to the event loop, you can no longer react to changes in the environment, for example to detect, if the browser is now in the foreground again. This is at least true in the main loop, have to check for service worker or web worker context.
+  
+
   \newpage
   \section{Analysis of different background execution methods}
-
+  
   \subsection{Timers}
 
+  Standard method for scheduling a recurring function in JavaScript. The setInterval function allows to specify a function and an interval in milliseconds after which a function is repeatedly called until the interval is cancelled.
+  
   \subsection{Web workers}
+  
+  Using the worker-timers\footnote{\url{https://github.com/chrisguttandin/worker-timers}} library to run a scheduler on a web worker, which calls a callback on the main loop. This circumenvents the setInterval throttling, when a browser tab is in the background.
 
   \subsection{Service workers}
 
+  Service workers have advantages. They run independent of the browser tab. They stay can stay aliver after the browser tab, which installed the service worker is closed.
+
+  \begin{itemize}   
+  \item Multiple methods for background execution:
+
+  \item Simple set interval after activation
+
+  \item In response to network request (corresponding website has to be open to trigger a network call)
+
+  \item Website push notifications (has to be allowed by user)
+
+  \item Web Background Synchronization API\footnote{\url{https://wicg.github.io/BackgroundSync/spec/}}
+  \end{itemize}
+  
   \subsection{Sensor readings}
 
+  The Sensors API allows to read from device sensors like accelerometer, gyroscope oder ambient light sensor. You can define the frequency in which you want to receive new sensor readings.
+
+  \subsection{Websocket connection}
+
+  Opening a websocket connection and leaving it open. You can execute code after recieving a message on the websocket channel. Have to check for the frequencies and how long the websocket channel can stay open.
+  
   \newpage
   \section{Web browser behaviour regarding the different methods}
 
+  At the time of writing this thesis, the following Browser versions were current:
+
+  Chrome 74
+  
+  Firefox 66
+  
+  Safari 11
+
+  
   \subsection{Desktop web browsers}
 
   \subsubsection{Google Chrome}
 
+  Chrome on macOS does not allow sensor readings while in background.
+
+  AmbientLightSensor has to be enabled via flags.
+  
   \subsubsection{Mozilla Firefox}
 
   \subsubsection{Apple Safari}
 
   \subsection{Mobile web browsers}
+
+  On iOS we only analyse Mobile Safari, because Apple does not allow other browser engines in the Apple AppStore. Every other browser app has to use the system-provided webview to be in accordance with § 2.5.6 from Apple Review Guidelines\footnote{\url{https://developer.apple.com/app-store/review/guidelines/\#software-requirements}}.
+
+  On Android, we can differentiate between different browser engines.
 
   \subsubsection{iOS Mobile Safari}
 
@@ -69,7 +120,7 @@
   
   \subsection{Method for measuring background execution}
 
-  Maybe with puppeteer or with OpenWPM\footnote{\url{https://github.com/mozilla/OpenWPM}} or with simple hooking the JavaScript functions
+  Maybe with puppeteer\footnote{\url{https://pptr.dev/}}, web developer tools or with OpenWPM\footnote{\url{https://github.com/mozilla/OpenWPM}} or with simple hooking the JavaScript functions
   
   \subsection{Evaluation of findings}
 
