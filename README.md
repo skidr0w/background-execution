@@ -33,3 +33,7 @@ Android | Firefox | - | - | -
 Puppeteer allows tracing of web pages. See https://pptr.dev/#?product=Puppeteer&version=v1.16.0&show=api-class-tracing
 
 The resulting json file can then be analysed in Timeline Viewer or Chrome Dev Tools.
+
+https://chromedevtools.github.io/timeline-viewer/
+
+`npm run trace`

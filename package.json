@@ -6,6 +6,9 @@
   "author": "Yannick Reifschneider <yannick.reifschneider@stud.tu-darmstadt.de>",
   "license": "MIT",
   "private": true,
+  "scripts": {
+    "trace": "node tracing/index.js"
+  },
   "dependencies": {
     "puppeteer": "^1.16.0"
   }
