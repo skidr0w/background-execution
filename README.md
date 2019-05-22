@@ -27,3 +27,9 @@ macOS Mojave 10.14 | Safari 11 | Throttles immediatly to 1tick/s | - | -
 iOS 12 | Mobile Safari | - | - | -
 Android | Chrome | - | - | -
 Android | Firefox | - | - | -
+
+## Tracing
+
+Puppeteer allows tracing of web pages. See https://pptr.dev/#?product=Puppeteer&version=v1.16.0&show=api-class-tracing
+
+The resulting json file can then be analysed in Timeline Viewer or Chrome Dev Tools.
