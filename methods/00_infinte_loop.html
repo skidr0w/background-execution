@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Simple</title>
+    <title>Infinite loop</title>
     <script src="https://unpkg.com/d3@5.9.2/dist/d3.min.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/metrics-graphics@2.15.6/dist/metricsgraphics.css"/>
     <script src="https://unpkg.com/metrics-graphics@2.15.6/dist/metricsgraphics.min.js"></script>
@@ -14,7 +14,7 @@
     <div id="chart"/>
     <script src="functions.js"></script>
     <script>
-      measure("window.setInterval", function(callback) {
+      measure("infinte loop", function(callback) {
         let running = true;
         window.setTimeout(function () {
           while (running && document.hidden) {
@@ -25,17 +25,18 @@
           running = false;
         };
       }, function(dataPoints) {
-        const data = d3.nest()
-                .key(d => d3.timeSecond(d.timeSinceFirstTick).getTime() / 1000)
-                .rollup(d => d.length)
-                .entries(dataPoints);
-        console.table(data);
+        const keys = Object.keys(dataPoints).sort();
+        const firstSecond = keys[0];
+        const data = keys.map(key => ({
+          key: (parseInt(key) - parseInt(firstSecond)) / 1000,
+          value: dataPoints[key],
+        }));
         MG.data_graphic({
           title: "Ticks per second",
+          chart_type: 'histogram',
           data: data,
           width: 600,
           height: 200,
-          right: 40,
           target: document.getElementById('chart'),
           x_accessor: 'key',
           x_label: 'Seconds since start',

@@ -28,17 +28,17 @@
           workerTimers.clearInterval(intervalId);
         };
       }, function(dataPoints) {
-        const data = d3.nest()
-                .key(d => d3.timeSecond(d.timeSinceFirstTick).getTime() / 1000)
-                .rollup(d => d.length)
-                .entries(dataPoints);
-        console.table(data);
+        const keys = Object.keys(dataPoints).sort();
+        const firstSecond = keys[0];
+        const data = keys.map(key => ({
+          key: (parseInt(key) - parseInt(firstSecond)) / 1000,
+          value: dataPoints[key],
+        }));
         MG.data_graphic({
           title: "Ticks per second",
           data: data,
           width: 600,
           height: 200,
-          right: 40,
           target: document.getElementById('chart'),
           x_accessor: 'key',
           x_label: 'Seconds since start',

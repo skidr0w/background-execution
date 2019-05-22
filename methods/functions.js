@@ -17,23 +17,19 @@ function formatMilliseconds(ms) {
 }
 
 function measure(methodName, methodFunction, callback) {
-  const originalDocumentTitle = document.title;
   let cleanupFunction = null;
-  let dataPoints = [];
+  let dataPoints = {};
 
   function handleVisibilityChange() {
     if (document.hidden) {
-      document.title =
-        originalDocumentTitle + " - Recording background execution...";
       startRecording();
     } else {
-      document.title = originalDocumentTitle;
       stopRecording();
     }
   }
 
   function startRecording() {
-    dataPoints = [];
+    dataPoints = {};
     cleanupFunction = methodFunction(tick);
   }
 
@@ -42,10 +38,12 @@ function measure(methodName, methodFunction, callback) {
       cleanupFunction();
       cleanupFunction = null;
     }
-    if (dataPoints.length > 0) {
-      const first = dataPoints[0];
-      const last = dataPoints[dataPoints.length - 1];
-      const totalDurationMs = last.date.getTime() - first.date.getTime();
+    console.log('dataPoints', dataPoints);
+    const keys = Object.keys(dataPoints).sort();
+    if (keys.length) {
+      const first = keys[0];
+      const last = keys[keys.length - 1];
+      const totalDurationMs = parseInt(last) - parseInt(first);
       console.log(
         "Recording finished after " + formatMilliseconds(totalDurationMs)
       );
@@ -58,13 +56,9 @@ function measure(methodName, methodFunction, callback) {
   }
 
   function tick() {
-    const date = new Date();
-    const timeSinceFirstTick =
-      dataPoints.length > 0 ? date.getTime() - dataPoints[0].date.getTime() : 0;
-    dataPoints.push({
-      date,
-      timeSinceFirstTick,
-    });
+    const now = new Date();
+    const key = now.getTime() - now.getMilliseconds();
+    dataPoints[key] = (dataPoints[key] || 0) + 1;
   }
 
   document.addEventListener("visibilitychange", handleVisibilityChange, false);
