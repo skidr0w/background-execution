@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Simple</title>
+</head>
+<body>
+<p>
+    This method uses <code>service worker</code> to run every 1 second.
+</p>
+<script src="../src/functions.js"></script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function() {
+      navigator.serviceWorker.register('03_service_worker.js').then(function(registration) {
+        // Registration was successful
+        console.log('ServiceWorker registration successful with scope: ', registration.scope);
+      }, function(err) {
+        // registration failed :(
+        console.log('ServiceWorker registration failed: ', err);
+      });
+    });
+  } else {
+    alert('Service worker not available in this browser');
+  }
+</script>
+</body>
+</html>

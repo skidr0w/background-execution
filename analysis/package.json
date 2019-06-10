@@ -1,0 +1,27 @@
+{
+  "name": "background-execution-analysis",
+  "version": "1.0.0",
+  "description": "Analysis of Methods for Background Execution in Modern Web Applications",
+  "author": "Yannick Reifschneider <yannick.reifschneider@stud.tu-darmstadt.de>",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "start": "webpack-dev-server --open",
+    "build": "webpack"
+  },
+  "devDependencies": {
+    "@types/d3": "^4",
+    "bootstrap": "^3.4.1",
+    "css-loader": "^2.1.1",
+    "d3": "^4",
+    "jquery": "^3.4.1",
+    "metrics-graphics": "^2.15.6",
+    "style-loader": "^0.23.1",
+    "ts-loader": "^6.0.2",
+    "typescript": "^3.5.1",
+    "webpack": "^4.33.0",
+    "webpack-cli": "^3.3.3",
+    "webpack-dev-server": "^3.7.1",
+    "worker-timers": "^5.0.18"
+  }
+}

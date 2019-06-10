@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Web worker</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css" integrity="sha384-HSMxcRTRxnN+Bdg0JdbxYKrThecOKuH5zCYotlSAcp1+c8xmyTe9GYg1l9a69psu" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap-theme.min.css" integrity="sha384-6pzBo3FDv/PJ8r2KRkGHifhEocL+1X2rVCTTkUfGk7/0pbek5mMa1upzvWbrUbOZ" crossorigin="anonymous">
+  </head>
+  <body class="container">
+    <h1>Web worker</h1>
+    <p>
+      This method uses web workers to schedule the background execution. Uses
+      <a href="https://github.com/chrisguttandin/worker-timers"
+        ><code>worker-timers</code></a
+      >
+      under the hood.
+    </p>
+
+    <div class="panel panel-default" id="parameters">
+      <div class="panel-heading">
+        <h2 class="panel-title">Parameters</h2>
+      </div>
+      <div class="panel-body">
+        <div class="row">
+          <div class="col-sm-4">
+            <div class="form-group">
+              <label for="interval">Interval (ms)</label>
+              <input type="number" class="form-control" id="interval" min="0" max="10000" step="50" value="50" aria-describedby="interval-help">
+              <span id="interval-help" class="help-block">Second parameter to <code>window.setInterval()</code>. Wait for this time before doing work.</span>
+            </div>
+          </div>
+          <div class="col-sm-4">
+            <div class="form-group">
+              <label for="work-duration">Work duration (ms)</label>
+              <input type="number" class="form-control" id="work-duration" min="0" max="10000" step="50" value="1000" aria-describedby="work-duration-help">
+              <span id="work-duration-help" class="help-block">Executing this long without yielding back to the event loop. Longer durations may get better performance for background exection, but will block the UI when returning to the tab.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="vendors~timer~web-worker.bundle.js"></script>
+    <script src="web-worker.bundle.js"></script>
+  </body>
+</html>
