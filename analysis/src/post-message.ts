@@ -15,8 +15,8 @@ function handleMessage(event: MessageEvent) {
     event.stopPropagation();
     if (callbackFn) {
       callbackFn();
+      window.postMessage(messageName, "*");
     }
-    window.postMessage(messageName, "*");
   }
 }
 
