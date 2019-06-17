@@ -2,14 +2,15 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Timer</title>
+    <title>Zero delay interval with postMessage</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css" integrity="sha384-HSMxcRTRxnN+Bdg0JdbxYKrThecOKuH5zCYotlSAcp1+c8xmyTe9GYg1l9a69psu" crossorigin="anonymous">
   </head>
   <body class="container">
-    <h1>Timer</h1>
+    <h1>Zero delay interval with postMessage</h1>
     <p>
-      This method uses <code>window.setInterval</code> for background execution.
+      This method uses <code>window.postMessage</code> for a near zero delay callback. (<a href="https://dbaron.org/log/20100309-faster-timeouts">Source</a>)
     </p>
+    <p><a href="https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/setTimeout#Reasons_for_delays_longer_than_specified">See here</a> for background information</p>
 
     <div class="panel panel-default" id="parameters">
       <div class="panel-heading">
@@ -17,13 +18,6 @@
       </div>
       <div class="panel-body">
         <div class="row">
-          <div class="col-sm-4">
-            <div class="form-group">
-              <label for="interval">Interval (ms)</label>
-              <input type="number" class="form-control" id="interval" min="0" max="10000" step="50" value="50" aria-describedby="interval-help">
-              <span id="interval-help" class="help-block">Second parameter to <code>window.setInterval()</code>. Wait for this time before doing work.</span>
-            </div>
-          </div>
           <div class="col-sm-4">
             <div class="form-group">
               <label for="work-duration">Work duration (ms)</label>
@@ -35,6 +29,6 @@
       </div>
     </div>
 
-    <script src="timer.bundle.js"></script>
+    <script src="post-message.bundle.js"></script>
   </body>
 </html>
