@@ -133,7 +133,6 @@ class Measurement {
 
   stopRecording() {
     if (this.appState.state === AppStates.RECORDING) {
-      console.log(this.method, this.method.stop);
       this.method.stop();
       this.appState = {
         state: AppStates.FINISHED,

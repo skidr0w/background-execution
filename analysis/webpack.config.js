@@ -3,7 +3,8 @@ const path = require('path');
 module.exports = {
   entry: {
     timer: './src/timer.ts',
-    'web-worker': './src/web-worker.ts'
+    'web-worker': './src/web-worker.ts',
+    'post-message': './src/post-message.ts',
   },
   module: {
     rules: [
@@ -31,9 +32,4 @@ module.exports = {
     filename: '[name].bundle.js',
     path: path.resolve(__dirname, 'dist'),
   },
-  optimization: {
-    splitChunks: {
-      chunks: 'all',
-    }
-  }
 };
