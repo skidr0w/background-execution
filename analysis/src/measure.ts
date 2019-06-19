@@ -1,5 +1,6 @@
 import { timeSecond } from 'd3';
 import MG from 'metrics-graphics';
+import 'd3-transition';
 import 'metrics-graphics/dist/metricsgraphics.css';
 
 interface DataPoints {
@@ -72,6 +73,13 @@ function documentTitleForState(state: AppStates, title: string) {
     case AppStates.FINISHED:
       return `⏹ ${title} – finished`;
   }
+}
+
+function formatDuration(sec_num: number) {
+  let hours   = Math.floor(sec_num / 3600);
+  let minutes = Math.floor((sec_num - (hours * 3600)) / 60);
+  let seconds = sec_num - (hours * 3600) - (minutes * 60);
+  return `${hours}:${minutes < 10 ? '0' : ''}${minutes}:${seconds < 0 ? '0' : ''}${seconds}`;
 }
 
 class Measurement {
@@ -159,8 +167,11 @@ class Measurement {
         target: this.target,
         x_accessor: 'key',
         x_label: 'Seconds in background',
+        xax_format: formatDuration,
         y_accessor: 'value',
         y_label: 'Ticks per second',
+        brush: 'x',
+        x_rug: true,
       });
     }
   }
