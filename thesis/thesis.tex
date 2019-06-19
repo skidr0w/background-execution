@@ -15,7 +15,7 @@
   \thesistitle{Analysis of Methods for Background Execution in Modern Web Applications}%
     {Analyse von Verfahren für Hintergrundausführung in modernen Webanwendungen}
   \author{Yannick Reifschneider}
-  \referee{}{}
+  \referee{Nikolay Matyunin}{Prof. Dr. Stefan Katzenbeisser}
   \department{Fachbereich Informatik}
   \group{Security Engineering}
   \dateofexam{\today}{\today}
@@ -26,9 +26,14 @@
   \tableofcontents
 
   \newpage
-  \section{Introduction}
+  \section{Abstract}
 
+  The application development industry shifts towards not developing native applications but instead use the browser as a universally available user interface platform. Web applications are indeed now capable of almost any task which would require a native application in the recent past. Popular word processing or spreadsheet applications for example are implemented with web technologies. A web site also has a completely different attack surface for a malicious actor then native applications. Browser engines do their best to protect their users of malicous web sites and also conserve energy.
   
+  In this paper we analyse major browsers regarding their behaviour of JavaScript code exection, when the execution page is in the background and not visible to the user. We show that the energy conserving methods of desktop browsers can easily be circumvented to do arbitrary calculations for unlimited time while the web site is not user visible. With these findings we trace popular websites to see if they use similar methods to execute code regulary in the background.
+
+  \newpage
+  \section{Introduction}
   
   \subsection{Motivation}
 
@@ -36,14 +41,25 @@
   \item Possible side channel attack (i.e. via sensor readings)
   \item A XSS vulnerability in a popular website could use the visitors as a botnet for a DDOS attack
   \end{itemize}
+
+  \subsection{Related works}
+
   
-  \subsection{The JavaScript execution model and the event loop}
+  \newpage
+  \section{Background information}
+  
+  \subsection{The JavaScript execution model}
 
   Why a simple infinite loop is not feasable: Web page becomes unresponsive. If you don't yield back to the event loop, you can no longer react to changes in the environment, for example to detect, if the browser is now in the foreground again. This is at least true in the main loop, have to check for service worker or web worker context.
+  
+  \subsection{Web workers}
+
   
 
   \newpage
   \section{Analysis of different background execution methods}
+
+  
   
   \subsection{Timers}
 
@@ -68,25 +84,9 @@
 
   \item Web Background Synchronization API\footnote{\url{https://wicg.github.io/BackgroundSync/spec/}}
   \end{itemize}
-  
-  \subsection{Sensor readings}
-  
-  The Sensors API allows to read from device sensors like accelerometer, gyroscope oder ambient light sensor. You can define the frequency in which you want to receive new sensor readings.
 
-  \subsection{Websocket connection}
-
-  Opening a websocket connection and leaving it open. You can execute code after recieving a message on the websocket channel. Have to check for the frequencies and how long the websocket channel can stay open.
   
   \newpage
-  \section{Web browser behaviour regarding the different methods}
-
-  At the time of writing this thesis, the following Browser versions were current:
-
-  Chrome 74
-  
-  Firefox 66
-  
-  Safari 11
 
   
   \subsection{Desktop web browsers}
@@ -123,8 +123,12 @@
   \subsection{Method for measuring background execution}
 
   Maybe with puppeteer\footnote{\url{https://pptr.dev/}}, web developer tools or with OpenWPM\footnote{\url{https://github.com/mozilla/OpenWPM}} or with simple hooking the JavaScript functions
+
+
+
   
-  \subsection{Evaluation of findings}
+  \newpage
+  \section{Evaluation of tracing results}
 
   
   \newpage
