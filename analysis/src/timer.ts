@@ -11,9 +11,10 @@ const measurement = new Measurement(() => {
       const workDuration = parseInt(workDurationInput.value);
       console.log('Starting measurement', { interval, workDuration });
       intervalId = window.setInterval(function () {
-        const runUntil = performance.now() + workDuration;
-        while (performance.now() < runUntil) {
-          callback();
+        let now = performance.now();
+        const runUntil = now + workDuration;
+        while (now < runUntil) {
+          now = callback();
         }
       }, interval);
     },
