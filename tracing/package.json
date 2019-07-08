@@ -9,6 +9,9 @@
     "trace": "node index.js"
   },
   "dependencies": {
-    "puppeteer": "^1.16.0"
+    "csv-parse": "^4.4.3",
+    "csv-stringify": "^5.3.0",
+    "puppeteer": "^1.16.0",
+    "stream-transform": "^2.0.1"
   }
 }
