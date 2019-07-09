@@ -3,6 +3,7 @@ const path = require('path');
 module.exports = {
   entry: {
     timer: './src/timer.ts',
+    microtask: './src/microtask.ts',
     'web-worker': './src/web-worker.ts',
     'post-message': './src/post-message.ts',
   },
