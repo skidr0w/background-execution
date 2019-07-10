@@ -7,14 +7,8 @@ const measurement = new Measurement(() => {
   let run = true;
   return {
     start: (callback) => {
-      const workDuration = parseInt(workDurationInput.value);
-      console.log('Starting measurement', { workDuration });
       function work() {
-        let now = performance.now();
-        const runUntil = now + workDuration;
-        while (now < runUntil) {
-          now = callback();
-        }
+        callback();
         if (run) {
           setTimeout(() => {
             Promise.resolve().then(work);
@@ -27,4 +21,4 @@ const measurement = new Measurement(() => {
       run = false;
     }
   }
-});
+}, () => parseInt(workDurationInput.value));

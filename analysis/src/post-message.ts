@@ -25,18 +25,12 @@ window.addEventListener("message", handleMessage, true);
 const measurement = new Measurement(() => {
   return {
     start: (callback) => {
-      const workDuration = parseInt(workDurationInput.value);
-      console.log('Starting measurement', { workDuration });
       setZeroInterval(function () {
-        let now = performance.now();
-        const runUntil = now + workDuration;
-        while (now < runUntil) {
-          now = callback();
-        }
+        callback();
       });
     },
     stop: function () {
       callbackFn = null;
     }
   }
-});
+}, () => parseInt(workDurationInput.value));
