@@ -27,18 +27,16 @@ const hookWorker = () => {
 };
 
 const tracer = (browser) => {
-  let nextPagePromise;
   return transform(async ([siteNo, siteUrl], done) => {
-    const pagePromise = (nextPagePromise || browser.newPage());
-    nextPagePromise = browser.newPage();
-    const page = await pagePromise;
+    const page = await browser.newPage();
+    let blankPage;
     try {
       let usesWorker = false;
       let postMessageCount = 0;
       await page.evaluateOnNewDocument(hookWorker);
       await page.evaluateOnNewDocument(hookPostMessage);
       await page.exposeFunction("reportWorker", (...args) => {
-        usesWorker = true;
+        usesWorker = args[0];
         console.log('Worker detected', siteUrl, args)
       });
       await page.exposeFunction("reportPostMessage", (...args) => {
@@ -46,21 +44,28 @@ const tracer = (browser) => {
         console.log('postMessage detected', siteUrl, args)
       });
       await page.goto(`http://${siteUrl}`);
-      await page.waitFor(60000);
+      await page.waitFor(1000);
+      blankPage = await browser.newPage();
+      await page.tracing.start({ path: `${siteNo}.json` });
+      await page.waitFor(15000);
+      await page.tracing.stop();
       done(null, [siteNo, siteUrl, String(postMessageCount), usesWorker ? '1' : '0'])
     } catch (e) {
       done(null, [siteNo, siteUrl, e]);
     } finally {
+      if (blankPage) {
+        await blankPage.close();
+      }
       await page.close();
     }
-  }, { parallel: 10 })
+  }, { parallel: 1 })
 };
 
 (async () => {
   const browser = await puppeteer.launch({ headless: false });
 
-  const inputPath = "top-1m.csv";
-  //const inputPath = "test.csv";
+  //const inputPath = "top-1m.csv";
+  const inputPath = "test.csv";
   fs.createReadStream(inputPath)
     .pipe(parse())
     .pipe(tracer(browser))
