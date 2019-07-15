@@ -46,7 +46,7 @@ const tracer = (browser) => {
       await page.goto(`http://${siteUrl}`);
       await page.waitFor(1000);
       blankPage = await browser.newPage();
-      await page.tracing.start({ path: `${siteNo}.json` });
+      await page.tracing.start({ path: `out/${siteNo}.json` });
       await page.waitFor(15000);
       await page.tracing.stop();
       done(null, [siteNo, siteUrl, String(postMessageCount), usesWorker ? '1' : '0'])
@@ -70,6 +70,6 @@ const tracer = (browser) => {
     .pipe(parse())
     .pipe(tracer(browser))
     .pipe(stringify())
-    .pipe(fs.createWriteStream("output.csv"));
+    .pipe(fs.createWriteStream("out/output.csv"));
 
 })();
