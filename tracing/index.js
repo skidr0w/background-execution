@@ -1,3 +1,6 @@
+const PARALLEL_BROWSERS = 5;
+const ANALYSE_TIME_SEC = 60;
+
 const puppeteer = require("puppeteer");
 const fs = require("fs");
 const { promisify } = require('util');
@@ -28,54 +31,58 @@ const hookWorker = () => {
   window.SharedWorker = createTracingWorker(originalSharedWorker);
 };
 
+const normlizeUrl = url =>
+  url
+    .replace('.', '_')
+    .replace('/', '__');
+
 const tracer = transform(async ([siteNo, siteUrl], done) => {
   let browser;
   try {
     browser = await puppeteer.launch({ headless: false });
   } catch (e) {
-    throw new Error('Could not open browser');
+    console.error('Could not open browser', e);
+    throw e;
   }
   try {
     const page = await browser.newPage();
-    let usesWorker = false;
-    let postMessageCount = 0;
+    let hookedWorkers = [];
+    let postMessage = [];
     await page.evaluateOnNewDocument(hookWorker);
     await page.evaluateOnNewDocument(hookPostMessage);
     await page.exposeFunction("reportWorker", (...args) => {
-      usesWorker = args[0];
+      hookedWorkers.push(args[0]);
       console.log('Worker detected', siteUrl, args)
     });
     await page.exposeFunction("reportPostMessage", (...args) => {
-      postMessageCount++;
+      postMessage.push(args);
       console.log('postMessage detected', siteUrl, args)
     });
     await page.goto(`http://${siteUrl}`);
     await page.waitFor(1000);
-    const workers = page.workers();
-    if (workers.length > 0) {
-      console.log('workers detected', workers);
-      usesWorker = workers[0].url();
-    }
     const blankPage = await browser.newPage();
-    const outFilePath = `out/${siteNo}.json`;
+    const outFilePath = `out/${siteNo}_${normlizeUrl(siteUrl)}.json`;
     await page.tracing.start({ path: outFilePath });
-    await page.waitFor(60000);
+    await page.waitFor(ANALYSE_TIME_SEC * 1000);
     await page.tracing.stop();
-    if (!usesWorker && postMessageCount === 0) {
+    const pptrWorkers = page.workers().map(worker => worker.url());
+    if (hookedWorkers.length === 0 && pptrWorkers.length === 0 && postMessage.length === 0) {
       await unlinkAsync(outFilePath)
     }
-    done(null, [siteNo, siteUrl, String(postMessageCount), usesWorker ? '1' : '0'])
+    const result = { hookedWorkers, pptrWorkers, postMessage };
+    done(null, [siteNo, siteUrl, JSON.stringify((result))])
   } catch (e) {
-    done(null, [siteNo, siteUrl, e]);
+    const result = { error: e.message };
+    done(null, [siteNo, siteUrl, JSON.stringify(result)]);
   } finally {
     await browser.close()
   }
-}, { parallel: 10 });
+}, { parallel: PARALLEL_BROWSERS });
 
 
 (async () => {
-  //const inputPath = "top-1m.csv";
-  const inputPath = "test.csv";
+  const inputPath = "top-1m.csv";
+  //const inputPath = "test.csv";
   fs.createReadStream(inputPath)
     .pipe(parse())
     .pipe(tracer)
