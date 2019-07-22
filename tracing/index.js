@@ -1,5 +1,6 @@
 const PARALLEL_BROWSERS = 5;
-const ANALYSE_TIME_SEC = 60;
+const ANALYSE_TIME_SECS = 60;
+const PAGE_LOAD_TIMEOUT_SECS = 120;
 
 const puppeteer = require("puppeteer");
 const fs = require("fs");
@@ -58,12 +59,12 @@ const tracer = transform(async ([siteNo, siteUrl], done) => {
       postMessage.push(args);
       console.log('postMessage detected', siteUrl, args)
     });
-    await page.goto(`http://${siteUrl}`);
+    await page.goto(`http://${siteUrl}`, { timeout: PAGE_LOAD_TIMEOUT_SECS * 1000 });
     await page.waitFor(1000);
     const blankPage = await browser.newPage();
     const outFilePath = `out/${siteNo}_${normlizeUrl(siteUrl)}.json`;
     await page.tracing.start({ path: outFilePath });
-    await page.waitFor(ANALYSE_TIME_SEC * 1000);
+    await page.waitFor(ANALYSE_TIME_SECS * 1000);
     await page.tracing.stop();
     const pptrWorkers = page.workers().map(worker => worker.url());
     if (hookedWorkers.length === 0 && pptrWorkers.length === 0 && postMessage.length === 0) {
