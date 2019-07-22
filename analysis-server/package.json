@@ -1,0 +1,17 @@
+{
+  "name": "background-execution-analysis-server",
+  "version": "1.0.0",
+  "description": "Analysis of Methods for Background Execution in Modern Web Applications",
+  "author": "Yannick Reifschneider <yannick.reifschneider@stud.tu-darmstadt.de>",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "start": "nodemon index.js"
+  },
+  "dependencies": {
+    "ws": "^7.1.1"
+  },
+  "devDependencies": {
+    "nodemon": "^1.19.1"
+  }
+}

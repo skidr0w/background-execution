@@ -2,10 +2,12 @@
   "private": true,
   "workspaces": [
     "analysis",
+    "analysis-server",
     "tracing"
   ],
   "scripts": {
     "start": "yarn workspace background-execution-analysis start",
+    "analysis-server": "yarn workspace background-execution-analysis-server start",
     "build": "yarn workspace background-execution-analysis build",
     "postbuild": "git add analysis/dist && git commit -m 'Build artifacts'",
     "gh-pages": "git subtree push --prefix=analysis/dist origin gh-pages",
