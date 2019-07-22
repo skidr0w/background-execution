@@ -25,4 +25,4 @@ const interval = setInterval(() => {
     ws.ping(noop);
     console.log('ping')
   });
-}, 30000);
+}, 5000);
