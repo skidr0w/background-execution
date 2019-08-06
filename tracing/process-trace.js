@@ -24,16 +24,16 @@ const reportProgress = (current, total) => {
   const results = [];
   const total = traceFiles.length;
   for (let i = 0; i < total; i++) {
+    const traceFile = traceFiles[i];
     try {
-      const traceFile = traceFiles[i];
       const filePath = path.join(OUT_DIR, traceFile);
       const model = await loadDevtoolsModel(filePath);
       const scriptingTimeFraction = calculateScriptingTimeFraction(model);
       results.push([traceFile, scriptingTimeFraction]);
+      reportProgress(i + 1, total);
     } catch (e) {
       console.log('Could not process file: %s (%s)', traceFile, e.message);
     }
-    reportProgress(i + 1, total);
   }
   const sortedResults = results.sort((a, b) => a[1] > b[1] ? -1 : 1);
   const csv = await stringifyAsync(sortedResults);
