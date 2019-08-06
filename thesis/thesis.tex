@@ -1,3 +1,4 @@
+
 \documentclass[article,type=bsc,colorback,accentcolor=tud9c]{tudthesis}
 %\usepackage{ngerman}
 \usepackage{hyperref}
@@ -30,16 +31,27 @@
 
   The application development industry shifts towards not developing native applications but instead use the browser as a universally available user interface platform. Web applications are indeed now capable of almost any task which would require a native application in the recent past. Popular word processing or spreadsheet applications for example are implemented with web technologies. A web site also has a completely different attack surface for a malicious actor then native applications. Browser engines do their best to protect their users of malicous web sites and also conserve energy.
   
-  In this paper we analyse major browsers regarding their behaviour of JavaScript code exection, when the execution page is in the background and not visible to the user. We show that the energy conserving methods of desktop browsers can easily be circumvented to do arbitrary calculations for unlimited time while the web site is not user visible. With these findings we trace popular websites to see if they use similar methods to execute code regulary in the background.
+  In this paper we analyse major browsers regarding their behaviour of JavaScript code exection, when the execution page is in the background and not visible to the user. We show that the energy conserving methods of desktop browsers can easily be circumvented to do arbitrary calculations for unlimited time while the web site is not user visible. With these findings we trace popular websites to see if they use similar methods to execute uninterrupted in the background.
 
   \newpage
   \section{Introduction}
+
+  Web browsers are a fundamental application on many computing devices. They also have to be trusted by the user of the device, because they run application code of any visited website.
+
+  Because browsers are so heavily used on many devices, they are encouraged to conserve battery and only use computing time, when they are really neccessary for the visited web page.
+
+  Eventually all tabs in the background should be halted completely and only woken up, when the page is moved to the foreground again. Due to the very different kind of applications which can be built using web technologies, not all tabs can be halted completely without breaking the application.
+
+  Many popular web sites earn money by showing ads on their page. These ads can in many cases also include JavaScript code, which then is executed on every visitor of this page.
+
+  There are also implementations of crypto currency miners implemented in JavaScript. These mining scripts are programmed to earn money for the website owner at the cost of the CPU and energy usage of the website visitors.
   
   \subsection{Motivation}
 
   \begin{itemize}
   \item Possible side channel attack (i.e. via sensor readings)
   \item A XSS vulnerability in a popular website could use the visitors as a botnet for a DDOS attack
+    
   \end{itemize}
 
   \subsection{Related works}
@@ -47,29 +59,51 @@
   
   \newpage
   \section{Background information}
+
   
   \subsection{The JavaScript execution model}
 
+  The JavaScript language has no functions to perform I/O operations on it's own. It needs a runtime to perform the I/O task. All calls to the runtime are non-blocking.
+
+  JavaScripts concurrency model is based on events and callbacks.
+
+  When a JavaScript task is running, it is guaranteed to not be interrupted until it is completed. This insures, that a variable cannot change from outside. This is in contrast to many other programming languages like Java or C, where another thread can mutate variables at any time. To guarantee this behaviour, the web browser has to block and wait until the task finishes. Once the task is finished, the runtime can change and perform other work. Due to this properties JavaScript tasks should be as small as possible to ensure responsiveness of the browser. If a JavaScript task never completes (i.e. it is executing an inifite loop) most browser show a warning to the user that a script is slowing down the website. The user then has the option to kill the task or wait longer.
+
+  
+
+  
+  
   Why a simple infinite loop is not feasable: Web page becomes unresponsive. If you don't yield back to the event loop, you can no longer react to changes in the environment, for example to detect, if the browser is now in the foreground again. This is at least true in the main loop, have to check for service worker or web worker context.
   
   \subsection{Web workers}
+
+  Web workers are a mechanism to perform long running uninterruptable calculations. Due to the runtime guarantees which were described in the last section, Web workers have a completely seperate execution context. They don't share variables or resources with the invoking context.
+
+  Web worker and main thread context can communicate by passing messages to each other, which are handled by their respective event loops. In contrast to the main thread, which can manipulate the DOM of the browser, the Web worker has limited functionality. But this limitation allows the web worker to run uninterrupted for long times. It does share resources with the browser renderer, and therefore does not block repaints or other browser events.
 
   
 
   \newpage
   \section{Analysis of different background execution methods}
 
+  \subsection{Methods}
+
   
-  
-  \subsection{Timers}
+  \subsubsection{Timers}
 
   Standard method for scheduling a recurring function in JavaScript. The setInterval function allows to specify a function and an interval in milliseconds after which a function is repeatedly called until the interval is cancelled.
   
-  \subsection{Web workers}
+  \subsubsection{Web workers}
   
   Using the worker-timers\footnote{\url{https://github.com/chrisguttandin/worker-timers}} library to run a scheduler on a web worker, which calls a callback on the main loop. This circumenvents the setInterval throttling, when a browser tab is in the background.
 
-  \subsection{Service workers}
+  \subsubsection{Timers with open WebSocket connection}
+
+  In some browsers window timers in background tabs are not throttled, when either audible music is playing or a websocket connection is open. Playing a sound file or opening a websocket connection work equaliy in preventing the throttling, but they differ hugely in how visible both are the user of the web page. While playing audio is audible and also marks your tab with a speaker icon, so the user can quickly find out, which tab is producing the sounds, opening a websocket connection is invisible to the user. Also many browser prevent automatic playback of audio and videos, because it is considered bad behaviour of the website to autoplay audible sounds.
+
+  
+  
+  \subsubsection{Service workers}
 
   Service workers have advantages. They run independent of the browser tab. They stay can stay aliver after the browser tab, which installed the service worker is closed.
 
@@ -88,6 +122,30 @@
   
   \newpage
 
+  \subsection{Browser behaviour}
+
+
+  Firefox budget-based throttling
+  \url{https://developer.mozilla.org/en-US/docs/Web/API/Page_Visibility_API#Policies_in_place_to_aid_background_page_performance}
+
+  Chrome budget-based throttling
+  \url{https://developers.google.com/web/updates/2017/03/background_tabs#budget-based_background_timer_throttling}
+
+  Safari throttling
+
+
+
+  Chrome Mobile
+
+  Mobile Firefox
+
+  Android Browser
+
+  Mobile Safari
+
+  Samsung Browser
+
+  
   
   \subsection{Desktop web browsers}
 
