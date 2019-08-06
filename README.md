@@ -19,14 +19,9 @@ I'm trying to find different methods to run code in the background in populer br
 
 ## Testing results
 
-OS | UA | setInterval | worker-timers | Service worker setInterval
--|-|-|-|-
-macOS Mojave 10.14 | Chrome 74 | Throttles immediatly to 1tick/s | can run indefinitely as long as tab is not closed, arbitrary ticks/s
-macOS Mojave 10.14 | Firefox 66 | Throttles immediatly to 1tick/s | can run indefinitely as long as tab is not closed, arbitrary ticks/s | -
-macOS Mojave 10.14 | Safari 11 | Throttles immediatly to 1tick/s | - | -
-iOS 12 | Mobile Safari | - | - | -
-Android | Chrome | - | - | -
-Android | Firefox | - | - | -
+- [Chrome budget-based timer throttling](https://developers.google.com/web/updates/2017/03/background_tabs#budget-based_background_timer_throttling)
+- [Firefox budget-based timer throttling](https://developer.mozilla.org/en-US/docs/Web/API/Page_Visibility_API#Policies_in_place_to_aid_background_page_performance)
+
 
 ## Tracing
 

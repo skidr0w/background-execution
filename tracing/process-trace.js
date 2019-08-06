@@ -1,22 +1,25 @@
 const fs = require('fs');
+const path = require('path');
 const { promisify } = require('util');
-const readFileAsync = promisify(fs.readFile);
-const DevtoolsTimelineModel = require('devtools-timeline-model');
+const { loadDevtoolsModel, calculateScriptingTimeFraction } = require('./calculate-scripting-time');
+const readdirAsync = promisify(fs.readdir);
+const writeFileAsync = promisify(fs.writeFile);
+const stringify = require('csv-stringify');
+const stringifyAsync = promisify(stringify);
 
-const loadDevtoolsModel = async (traceFilePath) => {
-  const traceEvents = await readFileAsync(traceFilePath, 'utf8');
-  return new DevtoolsTimelineModel(traceEvents);
-};
+const OUT_DIR = './out';
+const RESULTS_FILE = 'sorted.csv';
 
-const calculateScriptingTimeFraction = (model) => {
-  const tracingModel = model.tracingModel();
-  const eventCategories = model.bottomUpGroupBy('Category');
-  const recordingTime = tracingModel.maximumRecordTime() - tracingModel.minimumRecordTime();
-  const scriptingTime = eventCategories.children.get('scripting').totalTime;
-  return scriptingTime / recordingTime;
-};
-
-module.exports = {
-  loadDevtoolsModel,
-  calculateScriptingTimeFraction
-};
+(async () => {
+  const files = await readdirAsync(OUT_DIR);
+  const traceFiles = files.filter(file => file.endsWith('.json'));
+  const results = await Promise.all(traceFiles.map(async traceFile => {
+    const filePath = path.join(OUT_DIR, traceFile);
+    const model = await loadDevtoolsModel(filePath);
+    const scriptingTimeFraction = calculateScriptingTimeFraction(model);
+    return [traceFile, scriptingTimeFraction]
+  }));
+  const sortedResults = results.sort((a, b) => a[1] > b[1] ? -1 : 1);
+  const csv = await stringifyAsync(sortedResults);
+  await writeFileAsync(path.join(OUT_DIR, RESULTS_FILE), csv);
+})();

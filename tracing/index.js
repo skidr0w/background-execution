@@ -16,7 +16,7 @@ const parse = require("csv-parse");
 const transform = require('stream-transform');
 const stringify = require('csv-stringify');
 const unlinkAsync = promisify(fs.unlink);
-const { loadDevtoolsModel, calculateScriptingTimeFraction } = require('./process-trace')
+const { loadDevtoolsModel, calculateScriptingTimeFraction } = require('./process-trace');
 
 const args = process.argv.slice(2);
 const sitesFile = args.length >= 1 ? args[0] : 'top-1m.csv';
