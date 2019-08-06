@@ -14,7 +14,7 @@ const RESULTS_FILE = 'sorted.csv';
   const files = await readdirAsync(OUT_DIR);
   const traceFiles = files.filter(file => file.endsWith('.json'));
   const results = [];
-  for (traceFile of traceFiles) {
+  for (const traceFile of traceFiles) {
     const filePath = path.join(OUT_DIR, traceFile);
     const model = await loadDevtoolsModel(filePath);
     const scriptingTimeFraction = calculateScriptingTimeFraction(model);
