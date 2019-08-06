@@ -13,12 +13,13 @@ const RESULTS_FILE = 'sorted.csv';
 (async () => {
   const files = await readdirAsync(OUT_DIR);
   const traceFiles = files.filter(file => file.endsWith('.json'));
-  const results = await Promise.all(traceFiles.map(async traceFile => {
+  const results = [];
+  for (traceFile of traceFiles) {
     const filePath = path.join(OUT_DIR, traceFile);
     const model = await loadDevtoolsModel(filePath);
     const scriptingTimeFraction = calculateScriptingTimeFraction(model);
-    return [traceFile, scriptingTimeFraction]
-  }));
+    results.push([traceFile, scriptingTimeFraction]);
+  }
   const sortedResults = results.sort((a, b) => a[1] > b[1] ? -1 : 1);
   const csv = await stringifyAsync(sortedResults);
   await writeFileAsync(path.join(OUT_DIR, RESULTS_FILE), csv);
