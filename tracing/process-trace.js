@@ -33,11 +33,20 @@ const reportProgress = (current, total) => {
     try {
       const filePath = path.join(OUT_DIR, traceFile);
       const model = await loadDevtoolsModel(filePath);
-      const scriptingTimeFraction = calculateScriptingTimeFraction(model);
-      results.push([traceFile, scriptingTimeFraction]);
+      const { scriptingTime, recordingTime } = calculateScriptingTimeFraction(
+        model,
+      );
+      const scriptingTimeFraction = scriptingTime / recordingTime;
+      results.push([
+        traceFile,
+        scriptingTime,
+        recordingTime,
+        scriptingTimeFraction,
+      ]);
       reportProgress(i + 1, total);
     } catch (e) {
-      console.log('Could not process file: %s (%s)', traceFile, e.message);
+      debugger;
+      console.log('Could not process file: %s', traceFile, e.message, e.stack);
     }
   }
   const sortedResults = results.sort((a, b) => (a[1] > b[1] ? -1 : 1));

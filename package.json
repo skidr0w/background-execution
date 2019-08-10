@@ -3,7 +3,8 @@
   "workspaces": [
     "analysis",
     "analysis-server",
-    "tracing"
+    "tracing",
+    "devtools-timeline-model"
   ],
   "scripts": {
     "start": "yarn workspace background-execution-analysis start",

@@ -104,14 +104,12 @@ const tracer = (analysisTimeSeconds, browserInstances) =>
         const traceFilePath = `out/${siteNo}_${normlizeUrl(siteUrl)}.json`;
         await page.tracing.start({
           path: traceFilePath,
-          categories: [
+          /*categories: [
             'v8',
-            'v8.execute',
             'devtools.timeline',
-            'devtools.timeline.async',
             'disabled-by-default-devtools.timeline',
             'disabled-by-default-v8.cpu_profiler',
-          ],
+          ],*/
         });
         await page.goto(`http://${siteUrl}`, {
           timeout: PAGE_LOAD_TIMEOUT_SECS * 1000,

@@ -13,8 +13,8 @@ const calculateScriptingTimeFraction = (model) => {
   const eventCategories = model.bottomUpGroupBy('Category');
   const recordingTime =
     tracingModel.maximumRecordTime() - tracingModel.minimumRecordTime();
-  const scriptingTime = eventCategories.children.get('scripting').totalTime;
-  return scriptingTime / recordingTime;
+  const scriptingTime = eventCategories.children().get('scripting').totalTime;
+  return { scriptingTime, recordingTime };
 };
 
 module.exports = {
