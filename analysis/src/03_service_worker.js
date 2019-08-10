@@ -1,3 +1,3 @@
 self.setInterval(() => {
-  console.log('tick')
-},1000);
+  console.log('tick');
+}, 1000);

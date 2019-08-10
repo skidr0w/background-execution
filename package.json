@@ -13,5 +13,26 @@
     "gh-pages": "git subtree push --prefix=analysis/dist origin gh-pages",
     "trace": "yarn workspace background-execution-tracing trace",
     "postinstall": "patch-package"
+  },
+  "devDependencies": {
+    "husky": "^3.0.3",
+    "lint-staged": "^9.2.1",
+    "prettier": "1.18.2"
+  },
+  "prettier": {
+    "trailingComma": "all",
+    "singleQuote": true,
+    "arrowParens": "always"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "*.{js,ts,json,html}": [
+      "prettier --write",
+      "git add"
+    ]
   }
 }

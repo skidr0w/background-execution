@@ -6,7 +6,7 @@ import 'metrics-graphics/dist/metricsgraphics.css';
 type DataPoints = {
   key: number;
   value: number;
-}[]
+}[];
 
 enum AppStates {
   READY = 'ready',
@@ -26,7 +26,7 @@ interface RecordingAppState {
   started: {
     date: Date;
     ts: number;
-  },
+  };
 }
 
 interface FinishedAppState {
@@ -36,7 +36,7 @@ interface FinishedAppState {
   started: {
     date: Date;
     ts: number;
-  },
+  };
   ended: Date;
 }
 
@@ -45,9 +45,9 @@ type AppState = ReadyAppState | RecordingAppState | FinishedAppState;
 type CleanupFn = () => void;
 type TickFn = () => void;
 type Method = {
-  start: (tickFn: TickFn) => void
-  stop: CleanupFn
-}
+  start: (tickFn: TickFn) => void;
+  stop: CleanupFn;
+};
 
 function documentTitleForState(state: AppState, title: string) {
   switch (state.state) {
@@ -61,39 +61,39 @@ function documentTitleForState(state: AppState, title: string) {
 }
 
 function formatDuration(sec_num: number) {
-  let hours   = Math.floor(sec_num / 3600);
-  let minutes = Math.floor((sec_num - (hours * 3600)) / 60);
-  let seconds = sec_num - (hours * 3600) - (minutes * 60);
-  return `${hours}:${minutes < 10 ? '0' : ''}${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+  let hours = Math.floor(sec_num / 3600);
+  let minutes = Math.floor((sec_num - hours * 3600) / 60);
+  let seconds = sec_num - hours * 3600 - minutes * 60;
+  return `${hours}:${minutes < 10 ? '0' : ''}${minutes}:${
+    seconds < 10 ? '0' : ''
+  }${seconds}`;
 }
 
 function formatMillis(millis: number) {
-  let hours   = Math.floor(millis / 3600000);
-  let minutes = Math.floor((millis - (hours * 3600000)) / 60000);
-  let seconds = Math.floor((millis - (hours * 3600000) - (minutes * 60000)) / 1000);
-  let ms = millis - (hours * 3600000) - (minutes * 60000) - (seconds * 1000);
+  let hours = Math.floor(millis / 3600000);
+  let minutes = Math.floor((millis - hours * 3600000) / 60000);
+  let seconds = Math.floor((millis - hours * 3600000 - minutes * 60000) / 1000);
+  let ms = millis - hours * 3600000 - minutes * 60000 - seconds * 1000;
   let output = '';
   if (hours > 0) {
-    output += `${hours}:`
+    output += `${hours}:`;
   }
   if (minutes > 0) {
-    output += `${minutes < 10 ? '0' : ''}:`
+    output += `${minutes < 10 ? '0' : ''}:`;
   }
-  return `${output}${minutes > 0 && seconds < 10 ? '0' : ''}${seconds}.${ms < 100 ? '0' : ''}${ms < 10 ? '0' : ''}${ms}`;
+  return `${output}${minutes > 0 && seconds < 10 ? '0' : ''}${seconds}.${
+    ms < 100 ? '0' : ''
+  }${ms < 10 ? '0' : ''}${ms}`;
 }
 
 class Measurement {
-
   private appState: AppState;
   private readonly method: Method;
   private readonly title: string;
   private readonly target: Element;
   private readonly getWorkingTimeMs: () => number;
 
-  constructor(
-    methodFn: () => Method,
-    getWorkingTimeMs: () => number,
-  ) {
+  constructor(methodFn: () => Method, getWorkingTimeMs: () => number) {
     this.appState = {
       state: AppStates.READY,
     };
@@ -116,7 +116,7 @@ class Measurement {
     } else if (!document.hidden) {
       this.stopRecording();
     }
-    this.updateTitle()
+    this.updateTitle();
   };
 
   tick = () => {
@@ -125,7 +125,7 @@ class Measurement {
       const timeSinceLastInvocation = start - this.appState.lastInvocationTime;
       this.appState.dataPoints.push({
         key: start - this.appState.started.ts,
-        value: timeSinceLastInvocation
+        value: timeSinceLastInvocation,
       });
       let now = start;
       const workUntil = start + this.appState.workingTimeMs;
@@ -171,7 +171,12 @@ class Measurement {
   renderResult() {
     if (this.appState.state === AppStates.FINISHED) {
       console.log('AppState', this.appState);
-      const { dataPoints: data, workingTimeMs, started: { date : started }, ended } = this.appState;
+      const {
+        dataPoints: data,
+        workingTimeMs,
+        started: { date: started },
+        ended,
+      } = this.appState;
       //const data = dataPoints.map((timeBetween, index) => ({ key: index, value: timeBetween }));
       //const scale = scaleLinear().domain([0, HZ]);
       //const proxy = new Proxy(dataPoints, ArrayLikeData(started, ended, scale));

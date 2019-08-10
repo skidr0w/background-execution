@@ -11,12 +11,13 @@ const loadDevtoolsModel = async (traceFilePath) => {
 const calculateScriptingTimeFraction = (model) => {
   const tracingModel = model.tracingModel();
   const eventCategories = model.bottomUpGroupBy('Category');
-  const recordingTime = tracingModel.maximumRecordTime() - tracingModel.minimumRecordTime();
+  const recordingTime =
+    tracingModel.maximumRecordTime() - tracingModel.minimumRecordTime();
   const scriptingTime = eventCategories.children.get('scripting').totalTime;
   return scriptingTime / recordingTime;
 };
 
 module.exports = {
   loadDevtoolsModel,
-  calculateScriptingTimeFraction
+  calculateScriptingTimeFraction,
 };

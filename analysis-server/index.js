@@ -10,7 +10,7 @@ wss.on('connection', (ws, req) => {
   ws.isAlive = true;
   ws.on('pong', () => {
     ws.isAlive = true;
-    console.log('received pong')
+    console.log('received pong');
   });
 });
 
@@ -23,6 +23,6 @@ const interval = setInterval(() => {
     }
     ws.isAlive = false;
     ws.ping(noop);
-    console.log('ping')
+    console.log('ping');
   });
 }, 5000);
