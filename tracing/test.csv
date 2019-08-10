@@ -1,5 +1,6 @@
-1,yreifschneider.github.io/background-execution/timer.html
-2,yreifschneider.github.io/background-execution/microtask.html
-3,yreifschneider.github.io/background-execution/post-message.html
-4,yreifschneider.github.io/background-execution/web-worker.html
-5,yreifschneider.github.io/background-execution/frame.html
+1,localhost:8080/timer.html
+2,localhost:8080/microtask.html
+3,localhost:8080/post-message.html
+4,localhost:8080/web-worker.html
+5,localhost:8080/frame.html
+6,localhost:8080/websocket-timer.html

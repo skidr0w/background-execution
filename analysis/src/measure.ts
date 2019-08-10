@@ -1,4 +1,4 @@
-import { curveLinear } from 'd3-shape';
+import { curveStepBefore } from 'd3-shape';
 import MG from 'metrics-graphics';
 import 'd3-transition';
 import 'metrics-graphics/dist/metricsgraphics.css';
@@ -188,7 +188,7 @@ class Measurement {
         y_accessor: 'value',
         y_label: 'Milliseconds since last invocation',
         yax_format: formatMillis,
-        interpolate: curveLinear,
+        interpolate: curveStepBefore,
         brush: 'x',
         x_rug: true,
       });

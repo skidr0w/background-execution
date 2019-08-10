@@ -1,5 +1,12 @@
-const PARALLEL_BROWSERS = 5;
-const ANALYSE_TIME_SECS = 15;
+const program = require('commander');
+const puppeteer = require('puppeteer');
+const fs = require('fs');
+const { promisify } = require('util');
+const parse = require('csv-parse');
+const transform = require('stream-transform');
+const stringify = require('csv-stringify');
+const { loadDevtoolsModel, calculateScriptingTimeFraction } = require('./calculate-scripting-time');
+
 const PAGE_LOAD_TIMEOUT_SECS = 120;
 
 const TRACE_EVENT_WINDOW_POSTMESSAGE = 'trace_event_window_postmessage';
@@ -9,17 +16,7 @@ const TRACE_EVENT_WEBSOCKET_CREATED = 'trace_event_websocket_created';
 const TRACE_EVENT_WEBSOCKET_CONNECTED = 'trace_event_websocket_connected';
 const TRACE_EVENT_WEBSOCKET_DISCONNECTED = 'trace_event_websocket_disconnected';
 
-const puppeteer = require("puppeteer");
-const fs = require("fs");
-const { promisify } = require('util');
-const parse = require("csv-parse");
-const transform = require('stream-transform');
-const stringify = require('csv-stringify');
-const unlinkAsync = promisify(fs.unlink);
-const { loadDevtoolsModel, calculateScriptingTimeFraction } = require('./process-trace');
-
-const args = process.argv.slice(2);
-const sitesFile = args.length >= 1 ? args[0] : 'top-1m.csv';
+const parseIntOption = (value, previous) => parseInt(value);
 
 const hookPostMessage = () => {
   const originalPostMessage = postMessage;
@@ -29,6 +26,28 @@ const hookPostMessage = () => {
     console.timeStamp("postMessage");
     return originalPostMessage(...arguments);
   };
+};
+
+const hookWebSocket = () => {
+  const originalWebSocket = WebSocket;
+  const handleOpen = () => {
+    console.timeStamp("WebSocket connected")
+  };
+  const handleClose = () => {
+    console.timeStamp("WebSocket disconnected")
+  };
+  const handleMessage = (...args) => {
+    console.timeStamp("WebSocket message");
+    console.log('WebSocket message:', ...args)
+  };
+  window.WebSocket = class extends WebSocket {
+    constructor(...args) {
+      super(...args);
+      this.addEventListener('open', handleOpen);
+      this.addEventListener('close', handleClose);
+      this.addEventListener('message', handleMessage);
+    }
+  }
 };
 
 const createTracingWorker = WorkerImpl => class extends WorkerImpl {
@@ -57,7 +76,7 @@ const normlizeUrl = url =>
     .replace(/\./g, '_')
     .replace(/\//g, '__');
 
-const tracer = transform(async ([siteNo, siteUrl], done) => {
+const tracer = (analysisTimeSeconds, browserInstances) => transform(async ([siteNo, siteUrl], done) => {
   let browser;
   try {
     browser = await puppeteer.launch({ headless: false });
@@ -71,6 +90,7 @@ const tracer = transform(async ([siteNo, siteUrl], done) => {
     let postMessage = [];
     await page.evaluateOnNewDocument(hookWorker);
     await page.evaluateOnNewDocument(hookPostMessage);
+    await page.evaluateOnNewDocument(hookWebSocket);
     await page.exposeFunction("reportWorker", (...args) => {
       hookedWorkers.push(args[0]);
       console.log('Worker detected', siteUrl, args)
@@ -79,23 +99,28 @@ const tracer = transform(async ([siteNo, siteUrl], done) => {
       postMessage.push(args);
       console.log('postMessage detected', siteUrl, args)
     });
+    const traceFilePath = `out/${siteNo}_${normlizeUrl(siteUrl)}.json`;
+    await page.tracing.start({
+      path: traceFilePath,
+      categories: [
+        'v8',
+        'v8.execute',
+        'devtools.timeline',
+        'devtools.timeline.async',
+        'disabled-by-default-devtools.timeline',
+        'disabled-by-default-v8.cpu_profiler',
+      ],
+    });
     await page.goto(`http://${siteUrl}`, { timeout: PAGE_LOAD_TIMEOUT_SECS * 1000 });
     await page.waitFor(1000);
     const blankPage = await browser.newPage();
-    const traceFilePath = `out/${siteNo}_${normlizeUrl(siteUrl)}.json`;
-    await page.tracing.start({ path: traceFilePath });
-    await page.waitFor(ANALYSE_TIME_SECS * 1000);
+    await page.waitFor(analysisTimeSeconds * 1000);
     await page.tracing.stop();
     const pptrWorkers = page.workers().map(worker => worker.url());
-    const backgroundExecutionDetected = !(hookedWorkers.length === 0 && pptrWorkers.length === 0 && postMessage.length === 0)
-    if (!backgroundExecutionDetected) {
-      await unlinkAsync(traceFilePath)
-    }
     done(null, {
       siteNo,
       siteUrl,
       traceFilePath,
-      backgroundExecutionDetected,
       hookedWorkers, pptrWorkers, postMessage
     });
   } catch (e) {
@@ -107,11 +132,11 @@ const tracer = transform(async ([siteNo, siteUrl], done) => {
   } finally {
     await browser.close()
   }
-}, { parallel: PARALLEL_BROWSERS });
+}, { parallel: browserInstances });
 
 const processTrace = transform(async (obj, done) => {
   console.log('processTrace', obj);
-  if (obj.error || !obj.backgroundExecutionDetected) {
+  if (obj.error) {
     done(null, obj)
   } else {
     try {
@@ -139,12 +164,25 @@ const transformToOutputCSV = transform((obj, done) => {
   ])
 });
 
-(async () => {
-  fs.createReadStream(sitesFile)
+const doTracing = async (inputFile, analysisTime, browserInstances) => {
+  fs.createReadStream(inputFile)
     .pipe(parse())
-    .pipe(tracer)
+    .pipe(tracer(analysisTime, browserInstances))
     .pipe(processTrace)
     .pipe(transformToOutputCSV)
     .pipe(stringify())
     .pipe(fs.createWriteStream("out/output.csv"));
-})();
+};
+
+program
+  .arguments('<input-file>')
+  .option('-t, --time <number>', 'analysis time in seconds', parseIntOption, 30)
+  .option('-b, --browsers <number>', 'number of parallel launched browser instances', parseIntOption, 5)
+  .action((inputFile, options) => {
+    doTracing(inputFile, options.time, options.browsers);
+  })
+  .parse(process.argv);
+
+if (program.args.length === 0) {
+  program.help();
+}
