@@ -45,7 +45,6 @@ const reportProgress = (current, total) => {
       ]);
       reportProgress(i + 1, total);
     } catch (e) {
-      debugger;
       console.log('Could not process file: %s', traceFile, e.message, e.stack);
     }
   }

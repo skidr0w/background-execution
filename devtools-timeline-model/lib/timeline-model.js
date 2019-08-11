@@ -4,6 +4,7 @@
 
 const fs = require('fs');
 const resolve = require('resolve');
+const stream = require('stream');
 
 // In order to maintain consistent global scope across the files,
 // and share natives like Array, etc, We will eval things within our sandbox
@@ -116,19 +117,33 @@ class SandboxedModel {
     this._tracingModel = new SDK.TracingModel(tracingModelBackingStorage);
     this._performanceModel = new Timeline.PerformanceModel();
 
-    if (typeof events === 'string') events = JSON.parse(events);
-    // WebPagetest trace files put events in object under key `traceEvents`
-    if (events.hasOwnProperty('traceEvents')) events = events.traceEvents;
-    // WebPageTest trace files often have an empty object at index 0
-    if (Object.keys(events[0]).length === 0) events.shift();
+    if (events instanceof stream) {
+      return new Promise((resolve, reject) => {
+        events.on('data', event => {
+          this._tracingModel.addEvents([event]);
+        });
+        events.on('error', error => {
+          reject(error);
+        });
+        events.on('end', () => {
+          this._tracingModel.tracingComplete();
+          this._performanceModel.setTracingModel(this._tracingModel);
+          resolve(this);
+        });
+      });
+    } else {
+      if (typeof events === 'string') events = JSON.parse(events);
+      // WebPagetest trace files put events in object under key `traceEvents`
+      if (events.hasOwnProperty('traceEvents')) events = events.traceEvents;
+      // WebPageTest trace files often have an empty object at index 0
+      if (Object.keys(events[0]).length === 0) events.shift();
 
-
-    // populates with events, and call TracingModel.tracingComplete()
-    this._tracingModel.addEvents(events);
-    this._tracingModel.tracingComplete();
-
-    this._performanceModel.setTracingModel(this._tracingModel);
-    return this;
+      // populates with events, and call TracingModel.tracingComplete()
+      this._tracingModel.addEvents(events);
+      this._tracingModel.tracingComplete();
+      this._performanceModel.setTracingModel(this._tracingModel);
+      return this;
+    }
   }
 
   _createGroupingFunction(groupBy) {

@@ -11,7 +11,7 @@ if (typeof __dirname === 'undefined') {
 
 class ModelAPI {
 
-  constructor(events) {
+  constructor() {
 
     // Everything happens in a sandboxed vm context, to keep globals and natives separate.
     // First, sandboxed contexts don't have any globals from node, so we whitelist a few we'll provide for it.
@@ -26,9 +26,11 @@ class ModelAPI {
     script.runInContext(ctx);
     // We pull the local `instance` variable out, to use as our proxy object
     this.sandbox = ctx.sandboxedModel;
-    this.sandbox.init(events);
-
     return this;
+  }
+
+  init(events) {
+    return this.sandbox.init(events);
   }
 
   timelineModel() {

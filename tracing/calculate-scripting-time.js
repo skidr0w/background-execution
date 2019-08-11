@@ -1,11 +1,14 @@
 const fs = require('fs');
-const { promisify } = require('util');
-const readFileAsync = promisify(fs.readFile);
+const JSONStream = require('JSONStream');
 const DevtoolsTimelineModel = require('devtools-timeline-model');
 
 const loadDevtoolsModel = async (traceFilePath) => {
-  const traceEvents = await readFileAsync(traceFilePath, 'utf8');
-  return new DevtoolsTimelineModel(traceEvents);
+  const traceEventsStream = fs
+    .createReadStream(traceFilePath, 'utf8')
+    .pipe(JSONStream.parse('traceEvents.*'));
+  const model = new DevtoolsTimelineModel();
+  await model.init(traceEventsStream);
+  return model;
 };
 
 const calculateScriptingTimeFraction = (model) => {
