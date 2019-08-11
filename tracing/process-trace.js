@@ -1,18 +1,15 @@
+const program = require('commander');
 const fs = require('fs');
 const path = require('path');
+const stream = require('stream');
 const { promisify } = require('util');
 const {
   loadDevtoolsModel,
   calculateScriptingTimeFraction,
 } = require('./calculate-scripting-time');
 const readdirAsync = promisify(fs.readdir);
-const writeFileAsync = promisify(fs.writeFile);
 const stringify = require('csv-stringify');
-const stringifyAsync = promisify(stringify);
 const readline = require('readline');
-
-const OUT_DIR = './out';
-const RESULTS_FILE = 'sorted.csv';
 
 const reportProgress = (current, total) => {
   process.stderr.write('\x1B7');
@@ -23,32 +20,59 @@ const reportProgress = (current, total) => {
   process.stderr.write('\x1B8');
 };
 
-(async () => {
-  const files = await readdirAsync(OUT_DIR);
+const doProcessing = async (inputDir, outputFile) => {
+  const files = await readdirAsync(inputDir);
   const traceFiles = files.filter((file) => file.endsWith('.json'));
-  const results = [];
+  let i = 0;
   const total = traceFiles.length;
-  for (let i = 0; i < total; i++) {
-    const traceFile = traceFiles[i];
-    try {
-      const filePath = path.join(OUT_DIR, traceFile);
-      const model = await loadDevtoolsModel(filePath);
-      const { scriptingTime, recordingTime } = calculateScriptingTimeFraction(
-        model,
-      );
-      const scriptingTimeFraction = scriptingTime / recordingTime;
-      results.push([
-        traceFile,
-        scriptingTime,
-        recordingTime,
-        scriptingTimeFraction,
-      ]);
-      reportProgress(i + 1, total);
-    } catch (e) {
-      console.log('Could not process file: %s', traceFile, e.message, e.stack);
-    }
-  }
-  const sortedResults = results.sort((a, b) => (a[1] > b[1] ? -1 : 1));
-  const csv = await stringifyAsync(sortedResults);
-  await writeFileAsync(path.join(OUT_DIR, RESULTS_FILE), csv);
-})();
+  const processedDataStream = new stream.Readable({
+    objectMode: true,
+    async read(size) {
+      if (i + 1 >= total) {
+        this.push(null);
+      }
+
+      const traceFile = traceFiles[i++];
+      try {
+        const filePath = path.join(inputDir, traceFile);
+        const model = await loadDevtoolsModel(filePath);
+        const { scriptingTime, recordingTime } = calculateScriptingTimeFraction(
+          model,
+        );
+        const scriptingTimeFraction = scriptingTime / recordingTime;
+        this.push([
+          traceFile,
+          '',
+          scriptingTime,
+          recordingTime,
+          scriptingTimeFraction,
+        ]);
+      } catch (e) {
+        console.log(
+          'Could not process file: %s',
+          traceFile,
+          e.message,
+          e.stack,
+        );
+        this.push([traceFile, e.message, NaN, NaN, NaN]);
+      } finally {
+        reportProgress(i + 1, total);
+      }
+    },
+  });
+  processedDataStream
+    .pipe(stringify())
+    .pipe(fs.createWriteStream(path.join(inputDir, outputFile)));
+};
+
+program
+  .arguments('<input-dir>')
+  .option('-o, --outfile <filename>', 'output filename', 'processed.csv')
+  .action((inputDir, options) => {
+    doProcessing(inputDir, options.outfile);
+  })
+  .parse(process.argv);
+
+if (program.args.length === 0) {
+  program.help();
+}
