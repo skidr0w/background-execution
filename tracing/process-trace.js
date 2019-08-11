@@ -28,8 +28,9 @@ const doProcessing = async (inputDir, outputFile) => {
   const processedDataStream = new stream.Readable({
     objectMode: true,
     async read(size) {
-      if (i + 1 >= total) {
+      if (i === total) {
         this.push(null);
+        return;
       }
 
       const traceFile = traceFiles[i++];
@@ -56,7 +57,7 @@ const doProcessing = async (inputDir, outputFile) => {
         );
         this.push([traceFile, e.message, NaN, NaN, NaN]);
       } finally {
-        reportProgress(i + 1, total);
+        reportProgress(i, total);
       }
     },
   });
