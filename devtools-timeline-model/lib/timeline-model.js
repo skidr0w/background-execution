@@ -194,12 +194,22 @@ class SandboxedModel {
    * @return {!TimelineModel.TimelineProfileTree.Node} A grouped and sorted tree
    */
   bottomUpGroupBy(grouping, startTime = 0, endTime = Infinity) {
-    const groupingFunction = event => Timeline.TimelineUIUtils.eventStyle(event).category.name
-    const mainThread = this._performanceModel.timelineModel().tracks().find(track => track.type === TimelineModel.TimelineModel.TrackType.MainThread)
+    const groupingFunction = event => Timeline.TimelineUIUtils.eventStyle(event).category.name;
 
-    return new TimelineModel.TimelineProfileTree.BottomUpRootNode(
-      mainThread.syncEvents(), this._performanceModel.filters(), startTime, endTime,
-      groupingFunction);
+    const isInterestingTrack = track =>
+      track.type === TimelineModel.TimelineModel.TrackType.MainThread ||
+      track.type === TimelineModel.TimelineModel.TrackType.Worker ||
+      track.name === 'CrRendererMain';
+
+    const tracks = this._performanceModel.timelineModel().tracks().filter(isInterestingTrack)
+
+    return tracks.map(track => ({
+      track,
+      bottomUp: new TimelineModel.TimelineProfileTree.BottomUpRootNode(
+        track.syncEvents(), this._performanceModel.filters(), startTime, endTime,
+        groupingFunction)
+      })
+    );
   }
 
   frameModel() {

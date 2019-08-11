@@ -13,10 +13,19 @@ const loadDevtoolsModel = async (traceFilePath) => {
 
 const calculateScriptingTimeFraction = (model) => {
   const tracingModel = model.tracingModel();
-  const eventCategories = model.bottomUpGroupBy('Category');
   const recordingTime =
     tracingModel.maximumRecordTime() - tracingModel.minimumRecordTime();
-  const scriptingTime = eventCategories.children().get('scripting').totalTime;
+  const eventCategoriesForTracks = model.bottomUpGroupBy('Category');
+  const scriptingTime = eventCategoriesForTracks
+    .map((eventCategories) =>
+      eventCategories.bottomUp.children().get('scripting'),
+    )
+    .filter((scripting) => scripting !== undefined)
+    .map((scripting) => scripting.totalTime)
+    .reduce(
+      (totalScripting, scriptingTime) => totalScripting + scriptingTime,
+      0,
+    );
   return { scriptingTime, recordingTime };
 };
 
