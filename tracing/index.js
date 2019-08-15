@@ -4,10 +4,6 @@ const fs = require('fs');
 const parse = require('csv-parse');
 const transform = require('stream-transform');
 const stringify = require('csv-stringify');
-const {
-  loadDevtoolsModel,
-  calculateScriptingTimeFraction,
-} = require('./calculate-scripting-time');
 
 const PAGE_LOAD_TIMEOUT_SECS = 120;
 
@@ -104,12 +100,14 @@ const tracer = (analysisTimeSeconds, browserInstances) =>
         const traceFilePath = `out/${siteNo}_${normlizeUrl(siteUrl)}.json`;
         await page.tracing.start({
           path: traceFilePath,
-          /*categories: [
-            'v8',
+          categories: [
             'devtools.timeline',
             'disabled-by-default-devtools.timeline',
+            'v8.execute',
+            'v8,devtools.timeline',
+            'v8,devtools.timeline,disabled-by-default-v8.compile',
             'disabled-by-default-v8.cpu_profiler',
-          ],*/
+          ],
         });
         await page.goto(`http://${siteUrl}`, {
           timeout: PAGE_LOAD_TIMEOUT_SECS * 1000,
@@ -140,30 +138,11 @@ const tracer = (analysisTimeSeconds, browserInstances) =>
     { parallel: browserInstances },
   );
 
-const processTrace = transform(async (obj, done) => {
-  console.log('processTrace', obj);
-  if (obj.error) {
-    done(null, obj);
-  } else {
-    try {
-      const model = await loadDevtoolsModel(obj.traceFilePath);
-      const scriptingTimeFraction = calculateScriptingTimeFraction(model);
-      done(null, {
-        ...obj,
-        scriptingTimeFraction,
-      });
-    } catch (e) {
-      done(e);
-    }
-  }
-});
-
 const transformToOutputCSV = transform((obj, done) => {
   const {
     siteNo,
     siteUrl,
     error,
-    scriptingTimeFraction,
     traceFilePath,
     hookedWorkers,
     pptrWorkers,
@@ -173,7 +152,6 @@ const transformToOutputCSV = transform((obj, done) => {
     siteNo,
     siteUrl,
     error ? error.message : '-',
-    scriptingTimeFraction || NaN,
     traceFilePath,
     JSON.stringify({ hookedWorkers, pptrWorkers, postMessage }),
   ]);
@@ -183,7 +161,6 @@ const doTracing = async (inputFile, analysisTime, browserInstances) => {
   fs.createReadStream(inputFile)
     .pipe(parse())
     .pipe(tracer(analysisTime, browserInstances))
-    .pipe(processTrace)
     .pipe(transformToOutputCSV)
     .pipe(stringify())
     .pipe(fs.createWriteStream('out/output.csv'));
