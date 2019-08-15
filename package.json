@@ -12,8 +12,7 @@
     "build": "yarn workspace background-execution-analysis build",
     "postbuild": "git add analysis/dist && git commit -m 'Build artifacts'",
     "gh-pages": "git subtree push --prefix=analysis/dist origin gh-pages",
-    "trace": "yarn workspace background-execution-tracing trace",
-    "postinstall": "patch-package"
+    "trace": "yarn workspace background-execution-tracing trace"
   },
   "devDependencies": {
     "husky": "^3.0.3",
