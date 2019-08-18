@@ -6,7 +6,7 @@
   "license": "UNLICENSED",
   "private": true,
   "scripts": {
-    "trace": "node --max-old-space-size=4096 index.js top-1m.csv",
+    "trace": "node --max-old-space-size=4096 index.js -t 900 top-1m.csv",
     "trace:test": "node --inspect --inspect-brk index.js -b 6 test.csv",
     "process": "node --max-old-space-size=4096 process-trace.js"
   },
