@@ -60,6 +60,9 @@
   \newpage
   \section{Background information}
 
+  Also explain why webassembly does nothing special in regards to background execution. That is, because it allows seamleas interop between webasm and Javascript functions. Therefore it has to run with the same runtime guarantees as JavaScript. WebASM Threads are based on Webworkers with a shared memory pool.
+  WebASM therefore behaves exactly like javascript functions and have to yield to the event loop to not block the browser.
+
   
   \subsection{The JavaScript execution model}
 

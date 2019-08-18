@@ -11,6 +11,10 @@ const readdirAsync = promisify(fs.readdir);
 const stringify = require('csv-stringify');
 const readline = require('readline');
 
+const WEBSOCKET_CREATED_EVENT_NAME = 'WebSocketCreate';
+const WEBSOCKET_CONNECTED_EVENT_NAME = 'WebSocketReceiveHandshakeResponse';
+const WEBSOCKET_DESTROYED_EVENT_NAME = 'WebSocketDestroy';
+
 const reportProgress = (current, total) => {
   process.stderr.write('\x1B7');
   readline.clearLine(process.stderr);

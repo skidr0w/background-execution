@@ -1,76 +1,17 @@
 const program = require('commander');
 const puppeteer = require('puppeteer');
 const fs = require('fs');
+const { promisify } = require('util');
+const readFileAsync = promisify(fs.readFile);
 const parse = require('csv-parse');
 const transform = require('stream-transform');
 const stringify = require('csv-stringify');
 
 const PAGE_LOAD_TIMEOUT_SECS = 120;
 
-const TRACE_EVENT_WINDOW_POSTMESSAGE = 'trace_event_window_postmessage';
-const TRACE_EVENT_WORKER_CREATED = 'trace_event_worker_created';
-const TRACE_EVENT_WORKER_POSTMESSAGE = 'trace_event_worker_postmessage';
-const TRACE_EVENT_WEBSOCKET_CREATED = 'trace_event_websocket_created';
-const TRACE_EVENT_WEBSOCKET_CONNECTED = 'trace_event_websocket_connected';
-const TRACE_EVENT_WEBSOCKET_DISCONNECTED = 'trace_event_websocket_disconnected';
-
 const parseIntOption = (value, previous) => parseInt(value);
 
-const hookPostMessage = () => {
-  const originalPostMessage = postMessage;
-  window.postMessage = function() {
-    reportPostMessage(...arguments);
-    console.count('postMessage');
-    console.timeStamp('postMessage');
-    return originalPostMessage(...arguments);
-  };
-};
-
-const hookWebSocket = () => {
-  const originalWebSocket = WebSocket;
-  const handleOpen = () => {
-    console.timeStamp('WebSocket connected');
-  };
-  const handleClose = () => {
-    console.timeStamp('WebSocket disconnected');
-  };
-  const handleMessage = (...args) => {
-    console.timeStamp('WebSocket message');
-    console.log('WebSocket message:', ...args);
-  };
-  window.WebSocket = class extends WebSocket {
-    constructor(...args) {
-      super(...args);
-      this.addEventListener('open', handleOpen);
-      this.addEventListener('close', handleClose);
-      this.addEventListener('message', handleMessage);
-    }
-  };
-};
-
-const createTracingWorker = (WorkerImpl) =>
-  class extends WorkerImpl {
-    constructor(...args) {
-      super(...args);
-      reportWorker(...args);
-      console.timeStamp('Worker created');
-    }
-  };
-
-const hookWorker = () => {
-  const originalWorker = Worker;
-  const originalSharedWorker = SharedWorker;
-  const createTracingWorker = (OriginalWorker) => {
-    return function() {
-      reportWorker(...arguments);
-      return new OriginalWorker(...arguments);
-    };
-  };
-  window.Worker = createTracingWorker(originalWorker);
-  window.SharedWorker = createTracingWorker(originalSharedWorker);
-};
-
-const normlizeUrl = (url) => url.replace(/\./g, '_').replace(/\//g, '__');
+const normalizeUrl = (url) => url.replace(/\./g, '_').replace(/\//g, '__');
 
 const tracer = (analysisTimeSeconds, browserInstances) =>
   transform(
@@ -84,28 +25,57 @@ const tracer = (analysisTimeSeconds, browserInstances) =>
       }
       try {
         const page = await browser.newPage();
-        let hookedWorkers = [];
-        let postMessage = [];
-        await page.evaluateOnNewDocument(hookWorker);
-        await page.evaluateOnNewDocument(hookPostMessage);
-        await page.evaluateOnNewDocument(hookWebSocket);
-        await page.exposeFunction('reportWorker', (...args) => {
-          hookedWorkers.push(args[0]);
-          console.log('Worker detected', siteUrl, args);
+        const detectedMethods = {
+          worker: false,
+          workerInitiators: new Set(),
+          webSocket: false,
+          webSocketInitiators: new Set(),
+          postMessageCount: 0,
+          postMessageInitiators: new Set(),
+        };
+        const reportMethod = (method, initiator) => {
+          let firstFound = false;
+          let initiatorStr = initiator.documentURL;
+          if (initiator.caller) {
+            initiatorStr += ' > ' + initiator.caller;
+          }
+          if (method === 'worker') {
+            firstFound = firstFound || !detectedMethods.worker;
+            detectedMethods.worker = true;
+            detectedMethods.workerInitiators.add(initiatorStr);
+          } else if (method === 'postMessage') {
+            firstFound = firstFound || detectedMethods.postMessageCount === 0;
+            detectedMethods.postMessageCount++;
+            detectedMethods.postMessageInitiators.add(initiatorStr);
+          } else if (method === 'webSocket') {
+            firstFound = firstFound || !detectedMethods.webSocket;
+            detectedMethods.webSocket = true;
+            detectedMethods.webSocketInitiators.add(initiatorStr);
+          }
+
+          if (firstFound) {
+            console.log(method, 'detected on', siteUrl);
+          }
+        };
+        const hooksScript = await readFileAsync('./hooks.js', 'utf8');
+        debugger;
+        await page.evaluateOnNewDocument(hooksScript);
+        await page.exposeFunction('reportWorker', (initiator) => {
+          reportMethod('worker', initiator);
         });
-        await page.exposeFunction('reportPostMessage', (...args) => {
-          postMessage.push(args);
-          console.log('postMessage detected', siteUrl, args);
+        await page.exposeFunction('reportPostMessage', (initiator) => {
+          reportMethod('postMessage', initiator);
         });
-        const traceFilePath = `out/${siteNo}_${normlizeUrl(siteUrl)}.json`;
+        await page.exposeFunction('reportWebSocket', (initiator) => {
+          reportMethod('webSocket', initiator);
+        });
+        const traceFilePath = `out/${siteNo}_${normalizeUrl(siteUrl)}.json`;
         await page.tracing.start({
           path: traceFilePath,
           categories: [
             'devtools.timeline',
             'disabled-by-default-devtools.timeline',
             'v8.execute',
-            'v8,devtools.timeline',
-            'v8,devtools.timeline,disabled-by-default-v8.compile',
             'disabled-by-default-v8.cpu_profiler',
           ],
         });
@@ -116,20 +86,21 @@ const tracer = (analysisTimeSeconds, browserInstances) =>
         const blankPage = await browser.newPage();
         await page.waitFor(analysisTimeSeconds * 1000);
         await page.tracing.stop();
-        const pptrWorkers = page.workers().map((worker) => worker.url());
+        const pptrWorkers = page.workers();
+        if (pptrWorkers.length > 0) {
+          detectedMethods.worker = true;
+        }
         done(null, {
           siteNo,
           siteUrl,
           traceFilePath,
-          hookedWorkers,
-          pptrWorkers,
-          postMessage,
+          detectedMethods,
         });
-      } catch (e) {
+      } catch (err) {
         done(null, {
           siteNo,
           siteUrl,
-          error: e,
+          err,
         });
       } finally {
         await browser.close();
@@ -139,22 +110,25 @@ const tracer = (analysisTimeSeconds, browserInstances) =>
   );
 
 const transformToOutputCSV = transform((obj, done) => {
-  const {
-    siteNo,
-    siteUrl,
-    error,
-    traceFilePath,
-    hookedWorkers,
-    pptrWorkers,
-    postMessage,
-  } = obj;
-  done(null, [
-    siteNo,
-    siteUrl,
-    error ? error.message : '-',
-    traceFilePath,
-    JSON.stringify({ hookedWorkers, pptrWorkers, postMessage }),
-  ]);
+  const { siteNo, siteUrl } = obj;
+  if (obj.err) {
+    const { err } = obj;
+    done(null, [siteNo, siteUrl, err.message, null, null, null, null]);
+  } else {
+    const { traceFilePath, detectedMethods } = obj;
+    done(null, [
+      siteNo,
+      siteUrl,
+      null,
+      traceFilePath,
+      detectedMethods.worker ? 'WORKER' : 'NO_WORKER',
+      Array.from(detectedMethods.workerInitiators).join('|'),
+      detectedMethods.webSocket ? 'WEBSOCKET' : 'NO_WEBSOCKET',
+      Array.from(detectedMethods.webSocketInitiators).join('|'),
+      detectedMethods.postMessageCount,
+      Array.from(detectedMethods.postMessageInitiators).join('|'),
+    ]);
+  }
 });
 
 const doTracing = async (inputFile, analysisTime, browserInstances) => {
