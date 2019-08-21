@@ -78,3 +78,9 @@ const hookWorker = () => {
 hookWorker();
 hookWebSocket();
 hookPostMessage();
+
+document.addEventListener('visibilitychange', () => {
+  console.timeStamp(
+    `visibilitychange_${document.hidden ? 'hidden' : 'visible'}`,
+  );
+});
