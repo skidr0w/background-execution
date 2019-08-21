@@ -201,7 +201,7 @@ class SandboxedModel {
       track.type === TimelineModel.TimelineModel.TrackType.Worker ||
       track.name === 'CrRendererMain';
 
-    const tracks = this._performanceModel.timelineModel().tracks().filter(isInterestingTrack)
+    const tracks = this._performanceModel.timelineModel().tracks().filter(isInterestingTrack);
 
     return tracks.map(track => ({
       track,
