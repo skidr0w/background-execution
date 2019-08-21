@@ -13,15 +13,42 @@ const parseIntOption = (value, previous) => parseInt(value);
 
 const normalizeUrl = (url) => url.replace(/\./g, '_').replace(/\//g, '__');
 
+const waitForSecs = (secs) =>
+  new Promise((resolve) => setTimeout(resolve, secs * 1000));
+
 const tracer = (analysisTimeSeconds, browserInstances) =>
   transform(
     async ([siteNo, siteUrl], done) => {
+      let tryNumber = 0;
       let browser;
-      try {
-        browser = await puppeteer.launch({ headless: false });
-      } catch (e) {
-        console.error('Could not open browser', e);
-        throw e;
+      while (!browser && tryNumber < 3) {
+        try {
+          browser = await puppeteer.launch({
+            headless: false,
+            args: [
+              '--no-first-run',
+              '--enable-automation',
+              '--password-store=basic',
+              '--use-mock-keychain',
+              'about:blank',
+            ],
+            pipe: true,
+            ignoreDefaultArgs: true,
+          });
+        } catch (err) {
+          console.error('Could not open browser', err);
+          const wait = [30, 300, analysisTimeSeconds];
+          await waitForSecs(wait[tryNumber++]);
+        }
+      }
+      if (!browser) {
+        const message = `Could not open browser window after ${tryNumber} attempts`;
+        console.log(siteUrl, message);
+        done(null, {
+          siteNo,
+          siteUrl,
+          err: new Error(message),
+        });
       }
       try {
         const page = await browser.newPage();
@@ -58,7 +85,6 @@ const tracer = (analysisTimeSeconds, browserInstances) =>
           }
         };
         const hooksScript = await readFileAsync('./hooks.js', 'utf8');
-        debugger;
         await page.evaluateOnNewDocument(hooksScript);
         await page.exposeFunction('reportWorker', (initiator) => {
           reportMethod('worker', initiator);
