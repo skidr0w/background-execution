@@ -179,9 +179,18 @@
   \newpage
   \section{Tracing of background execution on popular websites}
 
-  Using the Alexa Top 100 Website list.
+  In the first part of this thesis, we identified different methods to circumvent the default browser throttling mechanisms. With these findings in mind we can now trace popular websites to analyse if these circumenvtion methods are used in the wild. Using the Alexa Top 1 million website list, we measure the average CPU usage of the websites. When we aggregate these tracing result, we can determine, if the browser throttling mechanisms are suiteable to limit CPU usage or if websites use these methods to actively or inadvertently bypass the background throttling mechanisms.
   
-  \subsection{Method for measuring background execution}
+  \subsection{Automated measuring of background execution}
+
+  To automate the tracing of popular websites we used the Puppeteer library\footnote{\url{https://pptr.dev/}} to control and automate Google Chrome. We choose Puppeteer because it allows us to access the Chrome internals like Web Profiler and also inject custom scripts into the loaded page to detect if circumvention methods which are described in part one of this thesis are being used. Puppeteer only allows to control Google Chrome, but with Google Chrome having the greatest market share among common Web browsers this is not a limiting factor.
+
+  The general idea for the tracing is, that we open a new Chrome instance and start the web profiling. Then we open the website to trace and wait for the initial load to complete. After that we move this website to the background by opening a new tab, so that the browser throttling mechanisms are activated. We profile the page for a 15 minutes time period. After the 15 minutes are completed, we close the browser instance and save the website trace for analysis.
+
+  The website trace allows us to understand if the website is running JavaScript code while it is in the background and which methods it used to initiate the execution. On a invidual site level the website trace profile allows us to see, which JavaScript functions were run and how long they took to complete.
+
+  The website trace profile allows us to dig deep into what a single website is executing while it is in the background. To get a better picture of how popular websites as a  to compare different websites regaring their background execution behaviour, we have to calculate some kind of score. We propose to use the average CPU usage during the profiling to use as a compareable score. 
+
 
   Maybe with puppeteer\footnote{\url{https://pptr.dev/}}, web developer tools or with OpenWPM\footnote{\url{https://github.com/mozilla/OpenWPM}} or with simple hooking the JavaScript functions
 
