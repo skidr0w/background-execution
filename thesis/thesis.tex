@@ -2,6 +2,8 @@
 \documentclass[article,type=bsc,colorback,accentcolor=tud9c]{tudthesis}
 %\usepackage{ngerman}
 \usepackage{hyperref}
+\usepackage{biblatex}
+\addbibresource{thesis.bib}
 
 \newcommand{\getmydate}{%
   \ifcase\month%
@@ -51,40 +53,43 @@
   \begin{itemize}
   \item Possible side channel attack (i.e. via sensor readings)
   \item A XSS vulnerability in a popular website could use the visitors as a botnet for a DDOS attack
-    
   \end{itemize}
 
   \subsection{Related works}
+  
+  
 
   
   \newpage
   \section{Background information}
+
+  JavaScript is the only programming language supported by all modern web browsers to enhance web sites or web applocications. If you compare JavaScript to other more traditional programming languages like C, C++ or Java you see some major differences between them.
+
+  \begin{itemize}
+  \item JavaScript has no functions for I/O like writing to a file or opening a socket. It depends on a runtime environment like a browser to provide I/O functionality.
+  \item JavaScript has no concept of parallelism like operating system threads or processes.
+  \item JavaScript is an event driven language and has a built in event loop.
+  \end{itemize}
+
+  All of these differences stem from the fact, that JavaScript was designed as an addition to HTML for enhancing web applications and the interface to the browser internal workings, such as the DOM. Many of these design decisions are choosen, because JavaScript is run in the browser and therefore can be run on any website you visit. This poses many security implications, because you may not want to give a website you visit the power to execute arbitrary programms on your computer.
 
   Also explain why webassembly does nothing special in regards to background execution. That is, because it allows seamleas interop between webasm and Javascript functions. Therefore it has to run with the same runtime guarantees as JavaScript. WebASM Threads are based on Webworkers with a shared memory pool.
   WebASM therefore behaves exactly like javascript functions and have to yield to the event loop to not block the browser.
 
   
   \subsection{The JavaScript execution model}
-
-  The JavaScript language has no functions to perform I/O operations on it's own. It needs a runtime to perform the I/O task. All calls to the runtime are non-blocking.
-
-  JavaScripts concurrency model is based on events and callbacks.
-
-  When a JavaScript task is running, it is guaranteed to not be interrupted until it is completed. This insures, that a variable cannot change from outside. This is in contrast to many other programming languages like Java or C, where another thread can mutate variables at any time. To guarantee this behaviour, the web browser has to block and wait until the task finishes. Once the task is finished, the runtime can change and perform other work. Due to this properties JavaScript tasks should be as small as possible to ensure responsiveness of the browser. If a JavaScript task never completes (i.e. it is executing an inifite loop) most browser show a warning to the user that a script is slowing down the website. The user then has the option to kill the task or wait longer.
-
-  
-
   
   
-  Why a simple infinite loop is not feasable: Web page becomes unresponsive. If you don't yield back to the event loop, you can no longer react to changes in the environment, for example to detect, if the browser is now in the foreground again. This is at least true in the main loop, have to check for service worker or web worker context.
+  The JavaScript runtime uses an event loop to schedule tasks for execution\autocite{mdn-event-loop}. The browser or other JavaScript code can put tasks on the task queue. During a single run of the event loop, the runtime removes the first item of the task queue and executes it. When the event queue is empty, the run loop waits until an event is placed into the queue.
+
+  When a JavaScript task is running, it is guaranteed to not be interrupted until it is completed. This insures, that a variable cannot change from outside. This is in contrast to many other programming languages like Java or C, where another thread can mutate variables at any time. To guarantee this behaviour, the JavaScript runtime in the web browser has to block and wait until the task finishes, because the JavaScript task has access to the browser internal state and DOM. Once the task is finished, the runtime can perform other work, such as layout calculations, which mutates its internal state. Due to these properties JavaScript tasks should be as small as possible to ensure responsiveness of the browser. If a JavaScript task takes a long time to complete (i.e. it is executing an infinite loop) most browser show a warning to the user that a script is slowing down the website. The user then has the option to kill the task or wait for the task to finish.
+  
   
   \subsection{Web workers}
 
   Web workers are a mechanism to perform long running uninterruptable calculations. Due to the runtime guarantees which were described in the last section, Web workers have a completely seperate execution context. They don't share variables or resources with the invoking context.
 
-  Web worker and main thread context can communicate by passing messages to each other, which are handled by their respective event loops. In contrast to the main thread, which can manipulate the DOM of the browser, the Web worker has limited functionality. But this limitation allows the web worker to run uninterrupted for long times. It does share resources with the browser renderer, and therefore does not block repaints or other browser events.
-
-  
+  The web worker and main thread context can communicate by passing messages to each other, which are handled by their respective event loops. In contrast to the main thread, which can manipulate the DOM of the browser, the Web worker has limited functionality. This limitation allows the web worker to run uninterrupted for longer times, because it does not does not block browser events.
 
   \newpage
   \section{Analysis of different background execution methods}
@@ -189,24 +194,25 @@
 
   The website trace allows us to understand if the website is running JavaScript code while it is in the background and which methods it used to initiate the execution. On a invidual site level the website trace profile allows us to see, which JavaScript functions were run and how long they took to complete.
 
-  The website trace profile allows us to dig deep into what a single website is executing while it is in the background. To get a better picture of how popular websites as a  to compare different websites regaring their background execution behaviour, we have to calculate some kind of score. We propose to use the average CPU usage during the profiling to use as a compareable score. 
+  The website trace profile allows us to dig deep into what a single website is executing while it is in the background. But to get a better picture of how popular websites in general behave in the background we have find a way to aggregate the analysis of the traces.
 
+  We propose to use the average CPU usage during the profiling to use as a score for a single website. The average CPU score can be calculated from the trace file by calculating summed duration, in which the website executed JavaScript code in the main thread and in spawned worker threads and dividing the sum by the time the trace was running. Wall clock time is a suitable replacement for CPU time in a scenario where the machine on which the measurements are taken is not under any other load from other processes. A website which uses no JavaScript at all should therefore receive a score of 0, whereas a website which does run uninterupted calculations on the main thread should receive a score of 1. If a website uses multiple worker threads and the machine on which the measurements are taken has more then one physical CPU core, then the website could receive a score which is greater then 1, because all workers could be active at the same time.
 
-  Maybe with puppeteer\footnote{\url{https://pptr.dev/}}, web developer tools or with OpenWPM\footnote{\url{https://github.com/mozilla/OpenWPM}} or with simple hooking the JavaScript functions
+  The background throttling mechanism put in place by Google Chrome does limit the timers of websites based on a CPU time budget. This budget is currently set so that websites on average only use 1\% of CPU usage. That would equal a score of 0.01 in our proposed metric. This limit gives a good estimation, if websites try to overcome the background throttling mechanism of Chrome. Websites which score greater then 0.01 presumably use one or more methods to prevent the throttling.
 
+  
 
 
   
   \newpage
   \section{Evaluation of tracing results}
-
   
   \newpage
   \section{Conclusion}
 
   
-
-  
+  \newpage
+  \printbibliography
 
    
 
