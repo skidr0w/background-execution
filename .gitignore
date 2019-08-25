@@ -4,3 +4,8 @@ node_modules/
 *.log
 *.out
 *.toc
+*.bbl
+*.bcf
+*.blg
+*.run.xml
+/thesis/auto
