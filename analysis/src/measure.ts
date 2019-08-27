@@ -204,6 +204,18 @@ class Measurement {
         brush: 'x',
         x_rug: true,
       });
+
+      const gnuplotData = data.map((dp) => `${dp.key}\t${dp.value}`).join('\n');
+      const blob = new Blob([gnuplotData], {
+        type: 'application/octet-stream',
+      });
+      const href = URL.createObjectURL(blob);
+
+      const el = document.createElement('a');
+      el.href = href;
+      el.download = 'measure-data.txt';
+      el.innerText = 'Download Gnuplot compatible data';
+      this.target.insertAdjacentElement('afterend', el);
     }
   }
 }
