@@ -3,10 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const stream = require('stream');
 const { promisify } = require('util');
-const {
-  loadDevtoolsModel,
-  calculateScriptingTimeFraction,
-} = require('./calculate-scripting-time');
+const { calculateScriptingScores } = require('./calculate-scripting-time');
 const readdirAsync = promisify(fs.readdir);
 const stringify = require('csv-stringify');
 const readline = require('readline');
@@ -36,19 +33,15 @@ const doProcessing = async (inputDir, outputFile) => {
       const traceFile = traceFiles[i++];
       try {
         const filePath = path.join(inputDir, traceFile);
-        const { model, timeSlicesWithOpenWebSocket } = await loadDevtoolsModel(
-          filePath,
-        );
-        const { scriptingTime, recordingTime } = calculateScriptingTimeFraction(
-          model,
-        );
-        const scriptingTimeFraction = scriptingTime / recordingTime;
+        const scriptingScores = await calculateScriptingScores(filePath);
         this.push([
           traceFile,
           '',
-          scriptingTime,
-          recordingTime,
-          scriptingTimeFraction,
+          scriptingScores.global.recordingTime,
+          scriptingScores.global.scriptingTime,
+          scriptingScores.worker.scriptingTime,
+          scriptingScores.webSocket.recordingTime,
+          scriptingScores.webSocket.scriptingTime,
         ]);
       } catch (e) {
         console.log(

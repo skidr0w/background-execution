@@ -7,7 +7,7 @@ const WEBSOCKET_CREATED_EVENT_NAME = 'WebSocketCreate';
 const WEBSOCKET_CONNECTED_EVENT_NAME = 'WebSocketReceiveHandshakeResponse';
 const WEBSOCKET_DESTROYED_EVENT_NAME = 'WebSocketDestroy';
 
-const loadDevtoolsModel = async (traceFilePath) => {
+const calculateScriptingScores = async (traceFilePath) => {
   const timeSlicesWithOpenWebSocket = [];
   let webSocketStartedTs;
   let openWebSocketConnections = 0;
@@ -35,16 +35,12 @@ const loadDevtoolsModel = async (traceFilePath) => {
   if (openWebSocketConnections > 0) {
     timeSlicesWithOpenWebSocket.push([webSocketStartedTs, Infinity]);
   }
-  return { model, timeSlicesWithOpenWebSocket };
-};
 
-const calculateScriptingTimeFraction = (model) => {
   const tracingModel = model.tracingModel();
   const recordingTime =
     tracingModel.maximumRecordTime() - tracingModel.minimumRecordTime();
-  debugger;
   const eventCategoriesForTracks = model.bottomUpGroupBy('Category');
-  const scriptingTime = eventCategoriesForTracks
+  const scriptingTimeGlobal = eventCategoriesForTracks
     .map((eventCategories) =>
       eventCategories.bottomUp.children().get('scripting'),
     )
@@ -54,10 +50,66 @@ const calculateScriptingTimeFraction = (model) => {
       (totalScripting, scriptingTime) => totalScripting + scriptingTime,
       0,
     );
-  return { scriptingTime, recordingTime };
+
+  const scriptingTimeWorker = eventCategoriesForTracks
+    .filter(
+      (eventCategoriesForTracks) =>
+        eventCategoriesForTracks.trackType === 'Worker',
+    )
+    .map((eventCategories) =>
+      eventCategories.bottomUp.children().get('scripting'),
+    )
+    .filter((scripting) => scripting !== undefined)
+    .map((scripting) => scripting.totalTime)
+    .reduce(
+      (totalScripting, scriptingTime) => totalScripting + scriptingTime,
+      0,
+    );
+
+  let scriptingTimeWebSocket = 0;
+  for (const timeSlice of timeSlicesWithOpenWebSocket) {
+    const eventCategoriesDuringOpenWebsocket = model.bottomUpGroupBy(
+      'Category',
+      timeSlice[0],
+      timeSlice[1],
+    );
+    scriptingTimeWebSocket = eventCategoriesDuringOpenWebsocket
+      .filter(
+        (eventCategoriesForTracks) =>
+          eventCategoriesForTracks.trackType === 'MainThread',
+      )
+      .map((eventCategories) =>
+        eventCategories.bottomUp.children().get('scripting'),
+      )
+      .filter((scripting) => scripting !== undefined)
+      .map((scripting) => scripting.totalTime)
+      .reduce(
+        (totalScripting, scriptingTime) => totalScripting + scriptingTime,
+        scriptingTimeWebSocket,
+      );
+  }
+  const recordingTimeWebSocket =
+    timeSlicesWithOpenWebSocket.reduce(
+      (agg, timeSlice) => agg + timeSlice[1] - timeSlice[0],
+      0,
+    ) / 1000;
+
+  return {
+    global: {
+      scriptingTime: scriptingTimeGlobal,
+      recordingTime,
+    },
+    worker: {
+      scriptingTime: scriptingTimeWorker,
+      recordingTime,
+    },
+    webSocket: {
+      scriptingTime: scriptingTimeWebSocket,
+      recordingTime: recordingTimeWebSocket,
+    },
+  };
 };
 
 module.exports = {
-  loadDevtoolsModel,
-  calculateScriptingTimeFraction,
+  calculateScriptingScores,
 };

@@ -204,7 +204,9 @@ class SandboxedModel {
     const tracks = this._performanceModel.timelineModel().tracks().filter(isInterestingTrack);
 
     return tracks.map(track => ({
-      track,
+      trackType:
+        track.type === TimelineModel.TimelineModel.TrackType.MainThread
+        || track.name === 'CrRendererMain' ? 'MainThread' : 'Worker',
       bottomUp: new TimelineModel.TimelineProfileTree.BottomUpRootNode(
         track.syncEvents(), this._performanceModel.filters(), startTime, endTime,
         groupingFunction)
