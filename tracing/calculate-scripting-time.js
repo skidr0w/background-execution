@@ -9,18 +9,20 @@ const WEBSOCKET_DESTROYED_EVENT_NAME = 'WebSocketDestroy';
 
 const calculateScriptingScores = async (traceFilePath) => {
   const timeSlicesWithOpenWebSocket = [];
+  let openWebSockets = [];
   let webSocketStartedTs;
-  let openWebSocketConnections = 0;
   const tapWebSocketEvents = transform((event) => {
     if (event.name === WEBSOCKET_CONNECTED_EVENT_NAME) {
-      if (openWebSocketConnections === 0) {
-        webSocketStartedTs = event.ts;
+      if (openWebSockets.length === 0) {
+        webSocketStartedTs = event.ts / 1000;
       }
-      openWebSocketConnections++;
+      openWebSockets.push(event.args.data.identifier);
     } else if (event.name === WEBSOCKET_DESTROYED_EVENT_NAME) {
-      openWebSocketConnections--;
-      if (openWebSocketConnections === 0) {
-        timeSlicesWithOpenWebSocket.push([webSocketStartedTs, event.ts]);
+      openWebSockets = openWebSockets.filter(
+        (id) => id !== event.args.data.identifier,
+      );
+      if (openWebSockets.length === 0) {
+        timeSlicesWithOpenWebSocket.push([webSocketStartedTs, event.ts / 1000]);
       }
     }
     return event;
@@ -32,7 +34,7 @@ const calculateScriptingScores = async (traceFilePath) => {
     .pipe(tapWebSocketEvents);
   const model = new DevtoolsTimelineModel();
   await model.init(traceEventsStream);
-  if (openWebSocketConnections > 0) {
+  if (openWebSockets.length > 0) {
     timeSlicesWithOpenWebSocket.push([webSocketStartedTs, Infinity]);
   }
 
@@ -51,6 +53,7 @@ const calculateScriptingScores = async (traceFilePath) => {
       0,
     );
 
+  debugger;
   const scriptingTimeWorker = eventCategoriesForTracks
     .filter(
       (eventCategoriesForTracks) =>
@@ -88,11 +91,13 @@ const calculateScriptingScores = async (traceFilePath) => {
         scriptingTimeWebSocket,
       );
   }
-  const recordingTimeWebSocket =
-    timeSlicesWithOpenWebSocket.reduce(
-      (agg, timeSlice) => agg + timeSlice[1] - timeSlice[0],
-      0,
-    ) / 1000;
+  const recordingTimeWebSocket = timeSlicesWithOpenWebSocket.reduce(
+    (agg, timeSlice) =>
+      agg + isFinite(timeSlice[1])
+        ? timeSlice[1]
+        : tracingModel.maximumRecordTime() - timeSlice[0],
+    0,
+  );
 
   return {
     global: {
