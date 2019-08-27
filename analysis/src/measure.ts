@@ -4,8 +4,9 @@ import 'd3-transition';
 import 'metrics-graphics/dist/metricsgraphics.css';
 
 type DataPoints = {
-  key: number;
-  value: number;
+  timeSinceStart: number;
+  timeSinceLastInvocation: number;
+  cpuUsage: number;
 }[];
 
 enum AppStates {
@@ -21,7 +22,7 @@ interface ReadyAppState {
 interface RecordingAppState {
   state: AppStates.RECORDING;
   workingTimeMs: number;
-  lastInvocationTime: number;
+  lastInvocationTime: number | null;
   dataPoints: DataPoints;
   started: {
     date: Date;
@@ -114,7 +115,8 @@ class Measurement {
     if (document.hidden) {
       this.startRecording();
     } else if (!document.hidden) {
-      this.stopRecording();
+      const appState = this.stopRecording();
+      this.renderResult(appState);
     }
     this.updateTitle();
   };
@@ -122,17 +124,21 @@ class Measurement {
   tick = () => {
     if (this.appState.state === AppStates.RECORDING) {
       const start = performance.now();
-      const timeSinceLastInvocation = start - this.appState.lastInvocationTime;
-      this.appState.dataPoints.push({
-        key: start - this.appState.started.ts,
-        value: timeSinceLastInvocation,
-      });
+      if (this.appState.lastInvocationTime) {
+        const timeSinceLastInvocation =
+          start - this.appState.lastInvocationTime;
+        this.appState.dataPoints.push({
+          timeSinceStart: start - this.appState.started.ts,
+          timeSinceLastInvocation,
+          cpuUsage: 1 / (timeSinceLastInvocation / this.appState.workingTimeMs),
+        });
+      }
+      this.appState.lastInvocationTime = start;
       let now = start;
       const workUntil = start + this.appState.workingTimeMs;
       while (now < workUntil) {
         now = performance.now();
       }
-      this.appState.lastInvocationTime = now;
     }
   };
 
@@ -143,7 +149,7 @@ class Measurement {
       this.appState = {
         state: AppStates.RECORDING,
         workingTimeMs,
-        lastInvocationTime: performance.now(),
+        lastInvocationTime: null,
         dataPoints: [],
         started: {
           date: new Date(),
@@ -164,23 +170,24 @@ class Measurement {
         started: this.appState.started,
         ended: new Date(),
       };
-      this.renderResult();
+      return this.appState;
     }
   }
 
-  renderResult() {
-    if (this.appState.state === AppStates.FINISHED) {
-      console.log('AppState', this.appState);
+  renderResult(appState: AppState) {
+    if (appState.state === AppStates.FINISHED) {
       const {
-        dataPoints: data,
+        dataPoints,
         workingTimeMs,
         started: { date: started },
         ended,
-      } = this.appState;
-      //const data = dataPoints.map((timeBetween, index) => ({ key: index, value: timeBetween }));
-      //const scale = scaleLinear().domain([0, HZ]);
-      //const proxy = new Proxy(dataPoints, ArrayLikeData(started, ended, scale));
-      //const data = Array.from(proxy as ArrayLike<number>);
+      } = appState;
+
+      const data = dataPoints.map((dataPoint) => ({
+        key: dataPoint.timeSinceStart,
+        value: dataPoint.cpuUsage,
+      }));
+
       MG.data_graphic({
         title: `Working time ${workingTimeMs}ms`,
         data: data,
@@ -192,7 +199,7 @@ class Measurement {
         xax_format: (val: number) => formatDuration(Math.round(val / 1000)),
         y_accessor: 'value',
         y_label: 'Milliseconds since last invocation',
-        yax_format: formatMillis,
+        //yax_format: formatMillis,
         interpolate: curveStepBefore,
         brush: 'x',
         x_rug: true,
