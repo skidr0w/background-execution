@@ -3,6 +3,7 @@
 %\usepackage{ngerman}
 \usepackage{hyperref}
 \usepackage{biblatex}
+\usepackage{tikz}
 \addbibresource{thesis.bib}
 
 \newcommand{\getmydate}{%
@@ -50,14 +51,22 @@
   
   \subsection{Motivation}
 
+  Most browser usage is on mobile and notebooks where battery life is crucial.\autocite{webkit-web-content-power-usage} At the same time, some sites may be motivated to use cryptominers on visitors computers as an alternative to ad networks.
+  
   \begin{itemize}
   \item Possible side channel attack (i.e. via sensor readings)
   \item A XSS vulnerability in a popular website could use the visitors as a botnet for a DDOS attack
   \end{itemize}
 
   \subsection{Related works}
+
+  \begin{itemize}
+  \item WebTAP does mass analysis of popular websites with regards to tracking.\autocite{webtap}
+
+  \item Truth in Web Minining analyses the if Cryptocurrency miners are a viable alternative to traditional ad serving as a revenue possibility for web sites.\autocite{papadopoulos2018truth} They come to the conclusion, that cryptocurrency mining is more profitable when the user stays longer then xxx minutes on the website.
   
-  
+
+  \end{itemize}
 
   
   \newpage
@@ -91,6 +100,11 @@
 
   The web worker and main thread context can communicate by passing messages to each other, which are handled by their respective event loops. In contrast to the main thread, which can manipulate the DOM of the browser, the Web worker has limited functionality. This limitation allows the web worker to run uninterrupted for longer times, because it does not does not block browser events.
 
+
+  \subsection{Trace event file format}
+
+  Explain which information the trace event file includes and how they are used in the Chrome Devtools Frontend to display performance metrics.
+  
   \newpage
   \section{Analysis of different background execution methods}
 
@@ -100,6 +114,13 @@
   \subsubsection{Timers}
 
   Standard method for scheduling a recurring function in JavaScript. The setInterval function allows to specify a function and an interval in milliseconds after which a function is repeatedly called until the interval is cancelled.
+
+  \begin{figure}
+	\begin{center}
+		\input{analysis-results/firefox-timer.txt.pgf}
+	\end{center}
+	\caption{Firefox CPU usage in background using timer method}
+  \end{figure}
   
   \subsubsection{Web workers}
   
@@ -134,40 +155,24 @@
 
 
   Firefox budget-based throttling
-  \url{https://developer.mozilla.org/en-US/docs/Web/API/Page_Visibility_API#Policies_in_place_to_aid_background_page_performance}
+  \autocite{mdn-page-visibility}
 
   Chrome budget-based throttling
-  \url{https://developers.google.com/web/updates/2017/03/background_tabs#budget-based_background_timer_throttling}
+  \autocite{chrome-background-tabs}
 
-  Safari throttling
+  Safari behaviour
 
-
-
-  Chrome Mobile
-
-  Mobile Firefox
-
-  Android Browser
-
-  Mobile Safari
-
-  Samsung Browser
-
-  
+ 
   
   \subsection{Desktop web browsers}
-
-  \subsubsection{Google Chrome}
 
   Chrome on macOS does not allow sensor readings while in background.
 
   AmbientLightSensor has to be enabled via flags.
   
-  \subsubsection{Mozilla Firefox}
 
   Firefox does not support the Sensors API, but implements an older specification of the ambient light sensor API. This older API does not allow to specify a frequency in which the event handler is called. Also, this API is no longer enabled by default since Firefox 60 due to privacy concerns. Also Firefox does not call the event handlers, when the tab is in the background
 
-  \subsubsection{Apple Safari}
 
   \subsection{Mobile web browsers}
 
@@ -175,11 +180,6 @@
 
   On Android, we can differentiate between different browser engines.
 
-  \subsubsection{iOS Mobile Safari}
-
-  \subsubsection{Chrome for Android}
-
-  \subsubsection{Firefox for Android}
 
   \newpage
   \section{Tracing of background execution on popular websites}
