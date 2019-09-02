@@ -1,0 +1,18 @@
+diff --git a/node_modules/chrome-devtools-frontend/front_end/sdk/TracingModel.js b/node_modules/chrome-devtools-frontend/front_end/sdk/TracingModel.js
+index 2a41d50..b997bcd 100644
+--- a/node_modules/chrome-devtools-frontend/front_end/sdk/TracingModel.js
++++ b/node_modules/chrome-devtools-frontend/front_end/sdk/TracingModel.js
+@@ -911,8 +911,11 @@ SDK.TracingModel.Thread = class extends SDK.TracingModel.NamedObject {
+           break;
+       }
+     }
+-    while (stack.length)
+-      stack.pop().setEndTime(this._model.maximumRecordTime());
++    while (stack.length) {
++      const e = stack.pop();
++      console.error('Removing B event without matching E event at ' + e.startTime + ' (' + e.name + ')');
++      this._events[e.ordinal] = null;
++    }
+     this._events.remove(null, false);
+   }
+ 
