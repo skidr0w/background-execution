@@ -32,25 +32,23 @@
   \newpage
   \section{Abstract}
 
-  The application development industry shifts towards not developing native applications but instead use the browser as a universally available user interface platform. Web applications are indeed now capable of almost any task which would require a native application in the recent past. Popular word processing or spreadsheet applications for example are implemented with web technologies. A web site also has a completely different attack surface for a malicious actor then native applications. Browser engines do their best to protect their users of malicous web sites and also conserve energy.
-  
-  In this paper we analyse major browsers regarding their behaviour of JavaScript code exection, when the execution page is in the background and not visible to the user. We show that the energy conserving methods of desktop browsers can easily be circumvented to do arbitrary calculations for unlimited time while the web site is not user visible. With these findings we trace popular websites to see if they use similar methods to execute uninterrupted in the background.
+  In this thesis we analyse modern browsers regarding their behaviour of JavaScript code exection in background tabs. We show that the energy conserving methods of desktop browsers can easily be circumvented to do arbitrary calculations for unlimited time while the web site is not user visible. With these findings we trace popular websites to see if they use similar methods to execute uninterrupted in the background.
 
   \newpage
   \section{Introduction}
 
-  Web browsers are a fundamental application on many computing devices. They also have to be trusted by the user of the device, because they run application code of any visited website.
+  Web technology received rapid advances in the last years. Many websites not only deliver static information in form of text and images, but are complete highly dynamic applications which compete with traditional software products. For many of the standard business applications like an E-mail client, a word processor or even a bitmap graphic manipulation software there are alterantives\cite{gmail}\cite{office365-online}\cite{photopea} which are developed using web technologies and used via a modern web browser. Some reasons for the rise of these web applications are, that browsers are getting more capable every year and the JavaScript performance is increasing drastically so that these applications are possible in the first place. Developing a web application instead of traditional software has also many benefits for the developer of said software. Web apps don't need installation, just a modern web browser, which comes preinstalled with any common operating system and mobile device. Visiting a web site to try out a piece of software is a much smaller hurdle to overcome then downloading, installing and running a piece of software. These reasons make the web a popular platform for developing new applications.
 
-  Because browsers are so heavily used on many devices, they are encouraged to conserve battery and only use computing time, when they are really neccessary for the visited web page.
+  At the same time, the revenue model for many websites is advertising. Websites include third party JavaScript from ad networks, which display ads and track impressions. The included code can be controlled by the advertiser. For a malicous entity, it is therefore possible to include JavaScript on reputable websites just by paying for the ad impression. This method of distribution for malicous script is known as malvertising\cite{wiki:malvertising}.
 
-  Eventually all tabs in the background should be halted completely and only woken up, when the page is moved to the foreground again. Due to the very different kind of applications which can be built using web technologies, not all tabs can be halted completely without breaking the application.
+  The web browser is a fundamental application on most personal computing devices and is trusted by it's users. Because many modern applications are implemented as web apps, web browser usage is ubiquitous in the usage of computing devices. As such, many users leave the web browser open during the whole time they use their device, often times with many website tabs open. The browser vendors are encouraged to conserve as much energy as possible to enable users on battery powered devices, such as mobile phones or notebooks which are not tethered to a power outlet, a longer usage time. On the other side, the browser should not break web applications which require regular CPU time to function correctly. Web apps, which need regular CPU time are sites, which notify the user about new content such as a news site or a social network, a web application which plays audio or video, or a web video conference application. All modern browsers limit the amount of CPU time a tab in the background can use and how often web sites can schedule new work. For maximum energy efficiency, all tabs in the background should eventually be halted completely and only woken up, when the page is moved to the foreground again.
 
-  Many popular web sites earn money by showing ads on their page. These ads can in many cases also include JavaScript code, which then is executed on every visitor of this page.
-
-  There are also implementations of crypto currency miners implemented in JavaScript. These mining scripts are programmed to earn money for the website owner at the cost of the CPU and energy usage of the website visitors.
+  In this thesis we find out, if the throttling mechanisms employed by browser vendors can be circumvented, so that web sites which are not visible to the browser can gain code execution for arbitrary time. We compare the different throttling mechanisms between desktop and mobile browsers and we trace popular websites to see if the found cirumvention tactics are actively used in the wild.
   
   \subsection{Motivation}
 
+  
+  
   Most browser usage is on mobile and notebooks where battery life is crucial.\autocite{webkit-web-content-power-usage} At the same time, some sites may be motivated to use cryptominers on visitors computers as an alternative to ad networks.
   
   \begin{itemize}
