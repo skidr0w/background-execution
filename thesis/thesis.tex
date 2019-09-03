@@ -37,33 +37,43 @@
   \newpage
   \section{Introduction}
 
-  Web technology received rapid advances in the last years. Many websites not only deliver static information in form of text and images, but are complete highly dynamic applications which compete with traditional software products. For many of the standard business applications like an E-mail client, a word processor or even a bitmap graphic manipulation software there are alterantives\cite{gmail}\cite{office365-online}\cite{photopea} which are developed using web technologies and used via a modern web browser. Some reasons for the rise of these web applications are, that browsers are getting more capable every year and the JavaScript performance is increasing drastically so that these applications are possible in the first place. Developing a web application instead of traditional software has also many benefits for the developer of said software. Web apps don't need installation, just a modern web browser, which comes preinstalled with any common operating system and mobile device. Visiting a web site to try out a piece of software is a much smaller hurdle to overcome then downloading, installing and running a piece of software. These reasons make the web a popular platform for developing new applications.
+  Web technology received rapid advances in the last years. Many websites not only deliver static information in form of text and images, but are complete highly dynamic applications which compete with traditional software products. For many of the standard business applications like an E-mail client, a word processor or even a bitmap graphic manipulation software there are alterantives\footnote{\url{https://www.google.com/gmail/about/}}\footnote{\url{https://products.office.com/en-us/free-office-online-for-the-web}}\footnote{\url{https://www.photopea.com/}}, which are developed using web technologies and used via a modern web browser. The web browser has grown from a renderer of static information to the operating system of web applications. Some reasons for the rise of these web applications are, that browsers are getting more capable every year and the JavaScript performance is increasing drastically so that these applications are possible in the first place. Developing a web application instead of traditional software has also many benefits for the developer of said software. Web apps don't need installation, just a modern web browser, which comes preinstalled with any common operating system and mobile device. Visiting a web site to try out a piece of software is a much smaller hurdle to overcome then downloading, installing and running a piece of software. These reasons make the web a popular platform for developing new applications.
 
   At the same time, the revenue model for many websites is advertising. Websites include third party JavaScript from ad networks, which display ads and track impressions. The included code can be controlled by the advertiser. For a malicous entity, it is therefore possible to include JavaScript on reputable websites just by paying for the ad impression. This method of distribution for malicous script is known as malvertising\cite{wiki:malvertising}.
 
-  The web browser is a fundamental application on most personal computing devices and is trusted by it's users. Because many modern applications are implemented as web apps, web browser usage is ubiquitous in the usage of computing devices. As such, many users leave the web browser open during the whole time they use their device, often times with many website tabs open. The browser vendors are encouraged to conserve as much energy as possible to enable users on battery powered devices, such as mobile phones or notebooks which are not tethered to a power outlet, a longer usage time. On the other side, the browser should not break web applications which require regular CPU time to function correctly. Web apps, which need regular CPU time are sites, which notify the user about new content such as a news site or a social network, a web application which plays audio or video, or a web video conference application. All modern browsers limit the amount of CPU time a tab in the background can use and how often web sites can schedule new work. For maximum energy efficiency, all tabs in the background should eventually be halted completely and only woken up, when the page is moved to the foreground again.
+  The web browser is a fundamental application on most personal computing devices and is trusted by it's users. Because many modern applications are implemented as web apps, web browser usage is ubiquitous in the usage of computing devices. As such, many users leave the web browser open during the whole time they use their device, often times with many website tabs open. The browser vendors are encouraged to conserve as much energy as possible to enable users on battery powered devices, such as mobile phones or notebooks which are not tethered to a power outlet, a longer usage time. On the other side, the browser should not break web applications which require regular CPU time to function correctly. Web apps, which need regular CPU time are sites, which notify the user about new content such as a news site or a social network, a web application which plays audio or video, or a web video conference application. All modern browsers limit the amount of CPU time a tab in the background can use and how often web sites can schedule new work. For maximum energy efficiency, all tabs in the background should eventually be halted completely and only woken up, when the page is moved to the foreground again. This is also the goal of browser vendors\cite{chrome-background-tabs-roadmap}, but the execution of this goal is easy without breaking existing web applications or providing a workaround for some applications.
 
-  In this thesis we find out, if the throttling mechanisms employed by browser vendors can be circumvented, so that web sites which are not visible to the browser can gain code execution for arbitrary time. We compare the different throttling mechanisms between desktop and mobile browsers and we trace popular websites to see if the found cirumvention tactics are actively used in the wild.
+  In this thesis we find out, if the throttling mechanisms employed by browser vendors can be circumvented, so that web sites which are not visible to the browser can gain code execution for arbitrary time. We compare the different throttling mechanisms between desktop and mobile browsers and we trace popular websites to see if the found cirumvention methods are actively used in the wild.
   
   \subsection{Motivation}
 
-  
-  
-  Most browser usage is on mobile and notebooks where battery life is crucial.\autocite{webkit-web-content-power-usage} At the same time, some sites may be motivated to use cryptominers on visitors computers as an alternative to ad networks.
-  
+  To render a website, the browser has to execute all JavaScript code which was included in the web site. With browser default settings this happens without the users explicit consent. This means the web site authors can use the browser of it's visitors to execute arbitrary scripts. This very fundamental behaviour of the web is therefor also attracting malicous entities. There are numerous activities, which malicous entities could perform with access to a web site with high amount of daily visits.
+
   \begin{itemize}
-  \item Possible side channel attack (i.e. via sensor readings)
-  \item A XSS vulnerability in a popular website could use the visitors as a botnet for a DDOS attack
+  \item The attacker could inject a browser crypto-currency miner to convert electricity of the website visitors into crypto currency. The existance of crypto currencies such as Monero, which uses proof of work algorithm, which is inefficient to calculate on custom hardware, makes the browser a viable target for such mining. Existing implementations of Monero miners implemented in web assemlby are available for this attack.
+  \item The browser could be used as a compute node in a botnet, which can be used for DDoS attacks or for cracking hashed passwords. Grossman et al.\cite{grossmann2013million} show that these attacks can be used with standard web technologies and not exploiting any weaknesses.
+  \item The computer of the visitor itself could be compromised by using exploits of the browser or the underlying system itself. Attacks which exploit hardware weaknesses such as Spectre\cite{Kocher2018spectre}, which could allow an attacker to read memory space of other browser tabs, could expose sensitive informations such as passwords or banking information of the uses. Rowhammer\cite{rowhammer} attacks could even persistently infect the users system. These exploits usually need quite some time to be successful and could benefit from constant background execution in a background browser tab.
   \end{itemize}
+
+  
 
   \subsection{Related works}
 
   \begin{itemize}
-  \item WebTAP does mass analysis of popular websites with regards to tracking.\autocite{webtap}
 
-  \item Truth in Web Minining analyses the if Cryptocurrency miners are a viable alternative to traditional ad serving as a revenue possibility for web sites.\autocite{papadopoulos2018truth} They come to the conclusion, that cryptocurrency mining is more profitable when the user stays longer then xxx minutes on the website.
-  
+  \item Papadopoulos et al.\autocite{papadopoulos2018truth} analyses the if Cryptocurrency miners are a viable alternative to traditional ad serving as a revenue possibility for web sites. They come to the conclusion, that cryptocurrency mining is more profitable when a user stays longer then 5.3 minutes on the website. When permanent execution of a crypto miners are possible in background tabs, then this time could easily be achieved.
 
+  \item Papadopoulus et al.\cite{papadopoulos2018master} show that browsers can be infected with malicous service workers to act as a puppet in a botnet. Their method for persistence requires an implementation of a draft proposel HTML5 API, which is not implemented in mainstream browsers yet. They focus in their research on service workers, which are independent of browser tabs, but poses other limitations. Our research instead focuses on web sites which are not user visible, i.e. in an inactive tab.   
+
+    
+  \item Measurements of existing popular websites is done for privacy related as well as security releated research. Engelhardt et al.\cite{englehardt2016online} for example developed the OpenWPM framework for doing privacy measurements on million of websites. This framework is also used for ...
+
+    Security related analysis of existing webpages are done for example: to measure the use of third party script inclusions\cite{nikiforakis2012you}, to assess the security claims provided by third party security seal providers\cite{van2014clubbing} or to study malware distributed via ad networks\cite{zarras2014dark}.
+
+
+  \item Pan et al. analyse the feasability to use the browser of website visitors for offloading large computing tasks\cite{pan2015gray}. They termed this usage of distributed data processing gray computing, because it can be done without the users explicit consent, for example while the users are watching video streams. Their research focus is the performance of web workers and the cost effectiveness in comparison to cloud computing offerings. Our research complements the findings of Pan, because they could allow grey computing even when the user is consuming other web sites.
+
+    
   \end{itemize}
 
   
@@ -99,9 +109,6 @@
   The web worker and main thread context can communicate by passing messages to each other, which are handled by their respective event loops. In contrast to the main thread, which can manipulate the DOM of the browser, the Web worker has limited functionality. This limitation allows the web worker to run uninterrupted for longer times, because it does not does not block browser events.
 
 
-  \subsection{Trace event file format}
-
-  Explain which information the trace event file includes and how they are used in the Chrome Devtools Frontend to display performance metrics.
   
   \newpage
   \section{Analysis of different background execution methods}
