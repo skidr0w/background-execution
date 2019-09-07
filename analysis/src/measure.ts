@@ -213,7 +213,11 @@ class Measurement {
 
       const el = document.createElement('a');
       el.href = href;
-      el.download = 'measure-data.txt';
+      el.id = 'download';
+      const browserName = parseBrowserName(navigator.userAgent);
+      el.download = `${yyyymmddhhmm(new Date())}_${browserName}_${
+        this.title
+      }_${this.getWorkingTimeMs()}.txt`;
       el.innerText = 'Download Gnuplot compatible data';
       this.target.insertAdjacentElement('afterend', el);
 
@@ -223,5 +227,28 @@ class Measurement {
     }
   }
 }
+
+const yyyymmddhhmm = (date: Date) => {
+  return `${date.getFullYear()}${
+    date.getMonth() < 10 ? '0' : ''
+  }${date.getMonth()}${date.getDate() < 10 ? '0' : ''}${date.getDate()}${
+    date.getHours() < 10 ? '0' : ''
+  }${date.getHours()}${date.getMinutes() < 10 ? '0' : ''}${date.getMinutes()}`;
+};
+
+const parseBrowserName = (userAgent: string) => {
+  const isChrome = /Chrome/.test(userAgent);
+  const isSafari = /Safari/.test(userAgent);
+  const isFirefox = /Firefox/.test(userAgent);
+  if (isChrome) {
+    return 'Chrome';
+  } else if (isSafari) {
+    return 'Safari';
+  } else if (isFirefox) {
+    return 'Firefox';
+  } else {
+    return userAgent;
+  }
+};
 
 export default Measurement;
