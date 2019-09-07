@@ -4,6 +4,34 @@
 \usepackage{hyperref}
 \usepackage{biblatex}
 \usepackage{tikz}
+\usepackage{listings}
+\usepackage{subcaption} 
+
+\lstdefinelanguage{JavaScript}{
+  morekeywords=[1]{break, continue, delete, else, for, function, if, in,
+    new, return, this, typeof, var, void, while, with, await, async, case,
+    catch, class, const, default, do, enum, export, extends, finally, from,
+    implements, import, instanceof, let, static, super, switch, throw, try},
+  % Literals, primitive types, and reference types.
+  morekeywords=[2]{false, null, true, boolean, number, undefined,
+    Array, Boolean, Date, Math, Number, String, Object},
+  % Built-ins.
+  morekeywords=[3]{eval, parseInt, parseFloat, escape, unescape},
+  sensitive,
+  morecomment=[s]{/*}{*/},
+  morecomment=[l]//,
+  morecomment=[s]{/**}{*/}, % JavaDoc style comments
+  morestring=[b]',
+  morestring=[b]",
+  morestring=[b]`
+}[keywords, comments, strings]
+
+\lstset{
+  language=JavaScript,
+  basicstyle=\ttfamily
+}
+
+
 \addbibresource{thesis.bib}
 
 \newcommand{\getmydate}{%
@@ -113,19 +141,52 @@
   \newpage
   \section{Analysis of different background execution methods}
 
-  \subsection{Methods}
+  As we have shown in the motivation section of this thesis, there numerous incentives to execute code in the background. Browsers vendors in contrast are motivated to limit the energy impact of JavaScript code in background tabs as much as possible to prolong the battery life of the users device. To assess the behaviour of the browser throttling mechanisms, we developed a framework to compare different methods for achieving background code execution. The framework handles the benchmarking and visualisation of each method. If new HTML5 APIs are released, that allow for a new method of scheduling tasks, this method can be plugged into the framework to compare it against existing methods. In this analysis we evaluate the throttling mechanisms employed by the following desktop browsers:
+
+  \begin{itemize}
+  \item Google Chrome 76
+  \item Mozilla Firefox 69
+  \item Apple Safari 12.1.2
+  \end{itemize}
+
+  For mobile browsers we evalute
+
+  \begin{itemize}
+  \item Google Chrome for Android 76
+  \item iOS 12.4.1 Mobile Safari
+  \end{itemize}
 
   
-  \subsubsection{Timers}
+  
+  \subsection{Methodology}
 
-  Standard method for scheduling a recurring function in JavaScript. The setInterval function allows to specify a function and an interval in milliseconds after which a function is repeatedly called until the interval is cancelled.
+  In the following sections we look at different methods for scheduling JavaScript code, when the tab is in the background. We describe how each browser behaves when this method is used to execute JavaScript code in the background and we use our measureing framework to compare the browser behaviour for each method.
 
+  The measuring framework one or two input parameters, to tune the measuring. First we can define the workload in milliseconds. This time defines, how long a simulated task should perform uninterrupted work. When this work is performed on the JavaScript main thread then the browser is unresponsive for this amount of time, until the simulated workload finished and yields back to the main thread. Google Chrome advises to keep all JavaScript tasks to under 50ms, to be percieved as immediate for the user\cite{chrome-rail-model}. For our comparison, we measure each method with two workload times for each browser, once for 50 ms workload and once for 1000 ms workload.
+
+  
+  \subsection{Timers}
+
+  The default method to schedule new tasks for execution is to use the function \texttt{setTimeout()} or \texttt{setInterval()} which are available on window or worker global scope. These methods take at least two arguments. The first is the function which should be scheduled as a task. The second argument is the time in milliseconds to wait before the task should be executed. As this is the most straighforward way to schedule tasks, this method might be the one which gets throttled the most. The WHATWG specification for timers\cite{whatwg-timers} even explicitly defines an optional waiting time which is user-agent defined to allow for optimization of power usage. Also, when \texttt{setTimeout()} calls are nested or \texttt{setInterval()} repeats the 5th time, the minimum waiting time is incresed to be 4ms.
+
+  Google Chrome throttles timers for a page, when it is in the background or not user visible \cite{chrome-background-tabs}. Since Version 11 timers are batched at most once a second. This batching helps in reducing the battery impact of the background page. Since Version 57 Google Chrome also uses a budget based timer throttling. Budget based timer throttling works by introducing a timer budget for every page in the background. When the web site is in the background for longer then 10 seconds, the budget is considered. Every scheduled timer task is only executed when the budget for this page is greater then zero. The runtime of the task is subtracted from the budget. The budget regenerates for 0.01 seconds per second. This budget based throttling has multiple implications for background pages. First, it allows for sudden bursts in computing time, when these burst are very infrequent, because the budget regenereates continously, and can be depleted in a very short amount. Background web pages which want to use continous computation time, are limited to an average of 1\% of CPU usage over time, because the budget regenerates at a rate of 1/100th of a second per second. The real CPU usage usually is a little higher then 1\% on average though and only approaches 1\% the longer the site is in the background, because the budget can be overdrawn with a long lasting task at the end of the measurement.
+
+  Firefox employs similiar throttling mechanisms to the ones from Google Chrome \cite{mdn-page-visibility}, though the details of the Firefox implementation differ slightly. The differences are, that in Firefox, the budget based timer throttling is used after a page is in the background for 30 seconds, instead of 10 seconds for Google Chrome. Firefox caps the page budget at a minimum of -150 ms and a maximum of 50 ms. That means, that Firefox does not allow large burst tasks, because the budget never increases above 50 ms, but longer lasting tasks, do not overdraw the budget more then -150 ms. This behaviour favors tasks, which are longer then 150ms. For example a repeated task with a duration of 1000 ms only needs to wait for 15 seconds, before it is executed again in Firefox, whereas the same task would have to wait for 100 seconds in Google Chrome, before the budget is posivite again. Firefox also employs additional throttling to tracking scripts \cite{mdn-tracker-throttling}, which 
+  
   \begin{figure}
-	\begin{center}
-		\input{analysis-results/firefox-timer.txt.pgf}
-	\end{center}
-	\caption{Firefox CPU usage in background using timer method}
+    \begin{subfigure}[t]{0.5\textwidth}
+      \includegraphics[width=\textwidth]{analysis-results/firefox-worker.pdf}
+      \caption{50 ms task duration}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.5\textwidth}
+      \includegraphics[width=\textwidth]{analysis-results/firefox-worker.pdf}
+      \caption{1000 ms task duration}
+    \end{subfigure}
+
+    \caption{CPU usage over time for timer tasks}
   \end{figure}
+ 
   
   \subsubsection{Web workers}
   
@@ -166,6 +227,10 @@
   \autocite{chrome-background-tabs}
 
   Safari behaviour
+
+  
+  
+  Safari reloads background tabs which use too much energy after around 8 minutes with the message ``This webpage was reloaded because it was using significant energy.''.
 
  
   
