@@ -1,6 +1,1 @@
-1,localhost:8080/timer.html
-2,localhost:8080/microtask.html
-3,localhost:8080/post-message.html
-4,localhost:8080/web-worker.html
-5,localhost:8080/frame.html
-6,localhost:8080/websocket-timer.html
+1,yreifschneider.github.io/backgrounwd-execution/frame_multiple_timer.html

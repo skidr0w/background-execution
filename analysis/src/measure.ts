@@ -216,6 +216,10 @@ class Measurement {
       el.download = 'measure-data.txt';
       el.innerText = 'Download Gnuplot compatible data';
       this.target.insertAdjacentElement('afterend', el);
+
+      const start = document.getElementById('start') as HTMLLinkElement;
+      start.href = 'javascript:location.reload()';
+      start.innerText = 'Restart measurement';
     }
   }
 }
