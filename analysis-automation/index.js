@@ -1,4 +1,4 @@
-const { Builder, By, Key } = require('selenium-webdriver');
+const { Builder, By } = require('selenium-webdriver');
 const firefox = require('selenium-webdriver/firefox');
 
 const MEASURE_TIME_SEC = 60 * 5;
@@ -27,7 +27,6 @@ const measure = async (url, browser, workTime) => {
     await driver.switchTo().window(windowHandles[0]);
     await driver.sleep(1000);
     await driver.findElement(By.css('#download')).click();
-    await driver.sleep(60000);
     await driver.sleep(1000);
     console.log(
       `Finished measurement for ${browser} and ${workTime}ms work time`,
