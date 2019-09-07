@@ -3,6 +3,7 @@
   "workspaces": [
     "analysis",
     "analysis-server",
+    "analysis-automation",
     "tracing",
     "devtools-timeline-model"
   ],

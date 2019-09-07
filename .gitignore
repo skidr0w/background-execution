@@ -9,3 +9,4 @@ node_modules/
 *.blg
 *.run.xml
 /thesis/auto
+*driver
