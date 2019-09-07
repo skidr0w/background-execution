@@ -205,8 +205,14 @@ class Measurement {
         x_rug: true,
       });
 
-      const gnuplotData = data.map((dp) => `${dp.key}\t${dp.value}`).join('\n');
-      const blob = new Blob([gnuplotData], {
+      const exportData = dataPoints
+        .map(
+          (dp) =>
+            `${dp.timeSinceStart},${dp.timeSinceLastInvocation},${dp.cpuUsage}`,
+        )
+        .join('\n');
+      const header = 'timeSinceStartMs,timeSinceLastInvocationMs,cpuUsage\n';
+      const blob = new Blob([header, exportData], {
         type: 'application/octet-stream',
       });
       const href = URL.createObjectURL(blob);
@@ -218,7 +224,8 @@ class Measurement {
       el.download = `${yyyymmddhhmm(new Date())}_${browserName}_${
         this.title
       }_${this.getWorkingTimeMs()}.txt`;
-      el.innerText = 'Download Gnuplot compatible data';
+      el.innerText = 'Download results as CSV';
+      el.className = 'btn btn-primary';
       this.target.insertAdjacentElement('afterend', el);
 
       const start = document.getElementById('start') as HTMLLinkElement;
