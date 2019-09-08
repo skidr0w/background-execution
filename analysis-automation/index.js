@@ -1,5 +1,6 @@
 const { Builder, By } = require('selenium-webdriver');
 const firefox = require('selenium-webdriver/firefox');
+const fs = require('fs');
 
 const MEASURE_TIME_SEC = 60 * 5;
 
@@ -10,7 +11,8 @@ const firefoxOptions = new firefox.Options().setPreference(
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-const measure = async (url, browser, workTime) => {
+const measure = async (method, browser, workTime) => {
+  const [methodName, url] = method;
   let driver;
   do {
     try {
@@ -37,6 +39,13 @@ const measure = async (url, browser, workTime) => {
     await driver.close();
     await driver.switchTo().window(windowHandles[0]);
     await driver.sleep(5000);
+    const screenshotData = await driver.takeScreenshot();
+    const buffer = Buffer.from(screenshotData, 'base64');
+    const time = new Date().toISOString().replace(/:/g, '_');
+    fs.writeFileSync(
+      `./screenshots/${time}_${browser}_${workTime}_${methodName}.png`,
+      buffer,
+    );
     await driver.findElement(By.css('#download')).click();
     await driver.sleep(2500);
     console.log(
@@ -50,20 +59,29 @@ const measure = async (url, browser, workTime) => {
   await sleep(2500);
 };
 
-const urls = [
-  'https://yreifschneider.github.io/background-execution/timer.html',
-  'https://yreifschneider.github.io/background-execution/post-message.html',
-  'https://yreifschneider.github.io/background-execution/web-worker.html',
-  'https://yreifschneider.github.io/background-execution/websocket-timer.html',
+const methods = [
+  ['timer', 'https://yreifschneider.github.io/background-execution/timer.html'],
+  [
+    'postMessage',
+    'https://yreifschneider.github.io/background-execution/post-message.html',
+  ],
+  [
+    'web-worker',
+    'https://yreifschneider.github.io/background-execution/web-worker.html',
+  ],
+  [
+    'websocket-timer',
+    'https://yreifschneider.github.io/background-execution/websocket-timer.html',
+  ],
 ];
 const browsers = ['chrome', 'firefox', 'safari'];
 const workTimes = ['50', '1000'];
 
 (async () => {
   for (const browser of browsers) {
-    for (const url of urls) {
+    for (const method of methods) {
       for (const workTime of workTimes) {
-        await measure(url, browser, workTime);
+        await measure(method, browser, workTime);
       }
     }
   }
