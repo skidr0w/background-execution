@@ -10,3 +10,4 @@ node_modules/
 *.run.xml
 /thesis/auto
 *driver
+analysis-automation/screenshots/*
