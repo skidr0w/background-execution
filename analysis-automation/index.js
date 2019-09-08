@@ -27,17 +27,25 @@ const measure = async (method, browser, workTime) => {
   } while (driver === undefined);
   try {
     await driver.get(url);
+    await driver
+      .manage()
+      .window()
+      .maximize();
+    let windowHandles = await driver.getAllWindowHandles();
+    const benchmarkWindowHandle = windowHandles[0];
     const workDurationInput = driver.findElement(By.css('#work-duration'));
     await workDurationInput.clear();
     await workDurationInput.sendKeys(workTime);
     await driver.sleep(1500);
     await driver.findElement(By.css('#start')).click();
     await driver.sleep(500);
-    const windowHandles = await driver.getAllWindowHandles();
+    windowHandles = await driver.getAllWindowHandles();
+    await driver
+      .switchTo()
+      .window(windowHandles.find((h) => h !== benchmarkWindowHandle));
     await driver.sleep(MEASURE_TIME_SEC * 1000);
-    await driver.switchTo().window(windowHandles[1]);
     await driver.close();
-    await driver.switchTo().window(windowHandles[0]);
+    await driver.switchTo().window(benchmarkWindowHandle);
     await driver.sleep(5000);
     const screenshotData = await driver.takeScreenshot();
     const buffer = Buffer.from(screenshotData, 'base64');
@@ -52,7 +60,7 @@ const measure = async (method, browser, workTime) => {
       `Finished measurement for ${browser} and ${url} and ${workTime}ms work time`,
     );
   } catch (err) {
-    console.error('Error:', err.message);
+    console.error('Error:', err.toString());
   } finally {
     await driver.quit();
   }
