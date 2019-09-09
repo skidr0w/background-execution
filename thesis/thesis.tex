@@ -171,9 +171,9 @@
 
   The measuring framework takes one parameter, to tune the measuring. With this parameter we can define the workload in milliseconds. This time defines, how long a simulated task should perform uninterrupted work. When this work is performed on the JavaScript main thread then the browser is unresponsive for this amount of time, until the simulated workload finished and yields back to the main thread. Google Chrome advises to keep all JavaScript tasks to under 50ms, to be percieved as immediate for the user\cite{chrome-rail-model}. For our analysis, we measure each method with two workload times for each browser, once for the recommended 50 ms workload and once for a long 1000 ms workload. The measurement is started automatically when the website page is moved to the background and stopped when it is visible again. The framework uses the Page Visibility API \cite{mdn-page-visibility} for determining the current page visibility.
 
-  To test the browsers behaviour to background tasks, we developed a browser automation script using Selenium WebDriver \cite{webdriver}. WebDriver lets us automate different browsers using an API. In our automation script, we open our analysis page which embeds our measuring framework and starts the benchmark by opening a new empty browser tab. After a fixed amount of time, we close the empty browser tab again to make the analysis page visible again and therefor stopping the measuring. This procedure is repeated for every browser, with every test method and the two defined workload times.
+  To test the browsers behaviour to background tasks, we developed a browser automation script using Selenium WebDriver \cite{webdriver}. WebDriver lets us automate different browsers using an API. In our automation script, we open our analysis page which embeds our measuring framework and starts the benchmark by opening a new empty browser tab. After a fixed amount of time, we close the empty browser tab to make the analysis page visible again and therefor stopping the measuring. This procedure is repeated for every browser, with every test method and the two defined workload times.
 
-  After the benchmarking for one scenario is complete, the measuring framework produces a CSV file for downloading the recorded invocations in the background. Each row in the CSV file corresponds to one invocation of the simulated work load. The recorded data includes the time, since the web page moved to the background, the time since the last invocation and a computed average CPU usage. This computed CPU usage is derived from the last invocation time and the simulated work load duration with the following formula:
+  After the benchmarking for one scenario is complete, the measuring framework produces a CSV file for downloading the recorded invocations in the background. Each row in the CSV file corresponds to one invocation of the simulated work load. The recorded data includes the time since the web page moved to the background, the time since the last invocation and a computed average CPU usage. This computed CPU usage is derived from the last invocation time and the simulated work load duration with the following formula:
 
   \begin{equation*}
     CPU_{avg} = \frac{t_{work duration}}{\Delta t_{last invocation}}
@@ -212,7 +212,13 @@
 
   \subsection{Timer tasks with WebSocket / AudioContext}
 
-  In some browsers window timers in background tabs are not throttled, when either audible music is playing or a websocket connection is open. Playing a sound file or opening a websocket connection work equaliy in preventing the throttling, but they differ hugely in how visible both are the user of the web page. While playing audio is audible and also marks your tab with a speaker icon, so the user can quickly find out, which tab is producing the sounds, opening a websocket connection is invisible to the user. Also many browser prevent automatic playback of audio and videos, because it is considered bad behaviour of the website to autoplay audible sounds.
+  Browser vendors try to strike a balance between throttling background pages as much as possible to conserve energy and keep the system more responsive and not breaking existing web applications. As backwards compatibility is an important factor, some browsers reduce their throttling, when they detect, that a web application might need more background processing time. The detection, if a web site needs more processing time is difficult though. Due to the dynamic nature of JavaScript, static analysis of web scripts is very difficult. Therefore browsers use a simple heuristic, to determine if their default throttling should be reduced.
+
+  Chrome disables the budget-based throttling, when a web site has either an open WebSocket connection open or plays audible music. Playing silent music does not count as audible music playback though \cite{chrome-background-tabs}. This behaviour could be misused to get more processing time for JavaScript tasks. Playing a audbile sound file or opening a WebSocket connection work equalliy in preventing the budget-based throttling, but they differ hugely in how visible they are to the user of the web page. While playing audio is obviously audible and marks your tab with a speaker icon in the tab bar\footnote{This is a convenience feature for users to quickly find out, which tab is producing the sounds. This is especially useful, if you have many tabs open at the same time.}, opening a websocket connection is invisible to the user and requires no user confirmation. Additionally Chrome prevents automatic playback of audio unless the user has interacted with the site before.
+
+  Firefox also disables the budget-based throttling when a open WebSocket connection is active. \textbf{TODO: Check for Audio Context.}
+
+  Safaris behaviours does not change, when a WebSocket connection is active.
 
   \begin{figure}
     \begin{subfigure}[t]{0.45\textwidth}
@@ -232,6 +238,12 @@
 
   \subsection{\texttt{postMessage()} tasks}
 
+  Besides \texttt{setTimeout()} or \texttt{setInterval()} there exists another API for putting tasks in the JavaScript task queue. The function \texttt{postMessage()} available on the window and worker scope is available to allow for communication between windows of different origins or between main thread and worker thread. As each window or worker has its own JavaScript execution context, the communication between these context must happen explicitly via \texttt{postMessage()} calls. The receiving context has to register for the \texttt{message} event on the window or worker object. A call to \texttt{postMessage()} with the receiver set to a window or worker who registered for the event, adds a new task to the task queue for this window. The scheduling of tasks, which are created with the before mentioned method, are not subject to the throttling as explained in the timer tasks section. This is also true for when a \texttt{postmessage()} call is sent and received from the same context. Tasks created with this method are also not subject to the minimum delay of 4 ms as timer tasks are \cite{zero-delay-timeouts}.
+
+  All desktop browsers do not throttle the scheduling of task created via \texttt{postMessage()}. This allows a web site to fully utilize the CPU even when it is on the background. Chrome and Firefox allow to use this method to run indefinitely, whereas Safari detects that a web page is using significant energy and reloads the page after around 8 minutes in the background.
+
+  With this API not being throttled when a web site is in the background, a malicous entity could use this to their advantage. This shows, that the throttling mechanisms put in place for timer tasks are only considered for saving energy for well-behaving websites and not for protecting the users web sites which actively try to circumvent the throttling.
+  
 
   
   \subsection{Web workers}
@@ -280,11 +292,11 @@
       \hline
       \texttt{postMessage}    & No throttling
                               & No throttling
-                              & No throttling, but page gets reloaded after around 8 minutes in the background \\
+                              & No throttling, but page gets reloaded when it is using significant energy \\
       \hline
       Web Worker              & No throttling
                               & No throttling
-                              & No throttling
+                              & No throttling, but page gets reloaded when it is using significant energy
     \end{tabular}
     \caption{Summary of desktop browser throttling behaviour}
     \label{tab:browser-throttling}
