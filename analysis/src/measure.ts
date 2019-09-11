@@ -115,8 +115,8 @@ class Measurement {
     if (document.hidden) {
       this.startRecording();
     } else if (!document.hidden) {
-      const appState = this.stopRecording();
-      this.renderResult(appState);
+      this.stopRecording();
+      this.renderResult(this.appState);
     }
     this.updateTitle();
   };
@@ -170,7 +170,6 @@ class Measurement {
         started: this.appState.started,
         ended: new Date(),
       };
-      return this.appState;
     }
   }
 

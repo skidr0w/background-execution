@@ -4,7 +4,7 @@ module.exports = {
   entry: {
     timer: './src/timer.ts',
     'websocket-timer': './src/websocket-timer.ts',
-    microtask: './src/microtask.ts',
+    'audiocontext-timer': './src/audiocontext-timer.ts',
     'web-worker': './src/web-worker.ts',
     'post-message': './src/post-message.ts',
   },
