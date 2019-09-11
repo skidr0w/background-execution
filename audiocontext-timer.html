@@ -2,13 +2,13 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Microtask</title>
+    <title>Timer tasks with AudioContext</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css" integrity="sha384-HSMxcRTRxnN+Bdg0JdbxYKrThecOKuH5zCYotlSAcp1+c8xmyTe9GYg1l9a69psu" crossorigin="anonymous">
   </head>
   <body class="container">
-    <h1>Microtask</h1>
+    <h1>Timer</h1>
     <p>
-      This method uses a <a href="https://github.com/whatwg/html/issues/512">microtask</a> for background execution.
+      This method uses <code>window.setInterval</code> for background execution while an AudioContext is open.
     </p>
 
     <div class="panel panel-default" id="parameters">
@@ -30,7 +30,6 @@
 
     <a class="btn btn-primary" href="about:blank" target="_blank" role="button" id="start">Open new tab to start measuring</a>
 
-
-    <script src="microtask.bundle.js"></script>
+    <script src="audiocontext-timer.bundle.js"></script>
   </body>
 </html>
