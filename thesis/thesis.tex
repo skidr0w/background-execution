@@ -78,7 +78,7 @@
   
   \subsection{Motivation}
 
-  To render a website, the browser has to execute all JavaScript code which was included in the web site. With browser default settings this happens without the users explicit consent. This means the web site authors can use the browser of it's visitors to execute arbitrary scripts. This very fundamental behaviour of the web is therefor also attracting malicous entities. There are numerous activities, which malicous entities could perform with access to a web site with high amount of daily visits.
+  The JavaScript language was designed as an extension to HTML and CSS in the early days of the world wide web, with the goal to enable user interaction with web pages. Although JavaScript is nowadays used for much more then just simple event handlers for user interactions, the basic principle of the web did not change: When a user visits a web site, the browser downloads all resources belonging to this web site, like HTML, images and also scripts. These scripts are run, to build up the complete website. When users visit a web page and do not disable JavaScript completly, they implicitly allow this web site to execute arbitrary code on their machine. This implicit trust is also a major design factor for HTML5 APIs. The goal of the HTML5 API designers is, to allow for new kind of applications, without allowing a web application too much control over the machine it is running on. Nevertheless there are numerous activities, which malicous entities could perform with access to a web site with high amount of daily visits.
 
   \begin{itemize}
   \item The attacker could inject a browser crypto-currency miner to convert electricity of the website visitors into crypto currency. The existance of crypto currencies such as Monero, which uses proof of work algorithm, which is inefficient to calculate on custom hardware, makes the browser a viable target for such mining. Existing implementations of Monero miners implemented in web assemlby are available for this attack.
@@ -111,34 +111,32 @@
   \newpage
   \section{Background}
 
-  JavaScript is the only programming language supported by all modern web browsers to enhance web sites or web applocications. If you compare JavaScript to other more traditional programming languages like C, C++ or Java you see some major differences between them.
+  To understand, how JavaScript handles tasks and concurrency, whe first have to understand how a JavaScript execution context is structured.
 
-  \begin{itemize}
-  \item JavaScript has no functions for I/O like writing to a file or opening a socket. It depends on a runtime environment like a browser to provide I/O functionality.
-  \item JavaScript has no concept of parallelism like operating system threads or processes.
-  \item JavaScript is an event driven language and has a built in event loop.
-  \end{itemize}
+  \subsection{The event loop}
 
-  All of these differences stem from the fact, that JavaScript was designed as an addition to HTML for enhancing web applications and the interface to the browser internal workings, such as the DOM. Many of these design decisions are choosen, because JavaScript is run in the browser and therefore can be run on any website you visit. This poses many security implications, because you may not want to give a website you visit the power to execute arbitrary programms on your computer.
+  A JavaScript execution context is organized into a task queue, a stack and a heap \autocite{mdn-event-loop}.
 
-  Also explain why webassembly does nothing special in regards to background execution. That is, because it allows seamleas interop between webasm and Javascript functions. Therefore it has to run with the same runtime guarantees as JavaScript. WebASM Threads are based on Webworkers with a shared memory pool.
-  WebASM therefore behaves exactly like javascript functions and have to yield to the event loop to not block the browser.
+  The task queue defines a list of tasks, which should be executed by the JavaScript runtime. A task consist of a callback function and optional arguments to this callback function. The JavaScript runtime implements an event loop, which processes the task queue. The event loop, waits for tasks to be added to the task queue. When the task queue is not empty, the event loop removes the first task from the queue and executes its corresponding callback function with the provided arguments. This is repeated until the task queue is empty again.
+
+  The stack is comparable to a call stack in other programming languages like Java or C. When a callback function from the task queue is executed, it creates a frame on the stack. Each function call inside the callback function also creates a stack frame. When a function returns, its frame is removed from the stack. A task from the task queue is finished, when the stack is empty.
+
+  The heap is a memory region for long living objects, which are not destroyed after the execution of a single task.
+
+  When a JavaScript task is running, it is guaranteed to not be interrupted until it is completed. This also insures, that every variable cannot be changed from outside during the execution of a task. This is in contrast to many other programming languages like Java or C, where another thread can mutate variables at any time. To guarantee this behaviour, the JavaScript runtime in the web browser has wait for task to finish before it can continue rendering the web page, because the JavaScript task has access to the browser internal state and DOM\footnote{The Document Object Model is the API for describing the representation of a web page. It describes the HTML element tree, styling and registered event handlers.}. Due to these properties JavaScript tasks should be as small as possible to ensure responsiveness of the browser \cite{chrome-rail-model}. If a JavaScript task takes a long time to complete (i.e. it is executing an infinite loop) most browser show a warning to the user that a script is slowing down the website. The user then has the option to kill the task or wait for the task to finish.
+
+  Tasks can be added to the task queue by registering event listeners for events, for example a onclick handler of a button. When this event occurs, the runtime then adds a new tasks to the task queue. Tasks can also be added by JavaScript code itself, for example by using a timer.
 
   
-  \subsection{The JavaScript execution model}
+  \subsection{The JavaScript concurrency model}
   
-  
-  The JavaScript runtime uses an event loop to schedule tasks for execution\autocite{mdn-event-loop}. The browser or other JavaScript code can put tasks on the task queue. During a single run of the event loop, the runtime removes the first item of the task queue and executes it. When the event queue is empty, the run loop waits until an event is placed into the queue.
-
-  When a JavaScript task is running, it is guaranteed to not be interrupted until it is completed. This insures, that a variable cannot change from outside. This is in contrast to many other programming languages like Java or C, where another thread can mutate variables at any time. To guarantee this behaviour, the JavaScript runtime in the web browser has to block and wait until the task finishes, because the JavaScript task has access to the browser internal state and DOM. Once the task is finished, the runtime can perform other work, such as layout calculations, which mutates its internal state. Due to these properties JavaScript tasks should be as small as possible to ensure responsiveness of the browser. If a JavaScript task takes a long time to complete (i.e. it is executing an infinite loop) most browser show a warning to the user that a script is slowing down the website. The user then has the option to kill the task or wait for the task to finish.
+  The JavaScript language does not support multi threading. Each browser tab has it's own JavaScript execution context. This execution context is tied to the rendering of the page, as explained in the section before. As long running JavaScripts tasks block the rendering of the web page, calls to potentially long running functions or other side effects are almost never blocking, but instead register a callback function to be called, when the result of function returns. The runtime then performs the side effect and creates a new task in the task queue with the registered callback function and the result of the side effect as a parameter for the callback. With this workaround it is possible to perform multiple long running tasks at the same time, by splitting the work into smaller tasks, which are suspended when they are waiting for other input and are resumed when the result becomes available.
   
   
   \subsection{Web workers}
 
-  Web workers are a mechanism to perform long running uninterruptable calculations. Due to the runtime guarantees which were described in the last section, Web workers have a completely seperate execution context. They don't share variables or resources with the invoking context.
-
-  The web worker and main thread context can communicate by passing messages to each other, which are handled by their respective event loops. In contrast to the main thread, which can manipulate the DOM of the browser, the Web worker has limited functionality. This limitation allows the web worker to run uninterrupted for longer times, because it does not does not block browser events.
-
+  Web workers are a addition to the HTML5 API, to overcome some of the limitations, which were described before. Web workers create a new execution context, which is \textit{not tied} to the browser rendering. They were introduced to perform long running uninterruptable calculations, which would block the rendering process for too long, if they would be executed in the main browser context. They don't share variables or resources with the main JavaScript context. The worker context therefore does not have access to the DOM of the web page, because that would introduce shared memory between the worker and main context, which would invalidate the runtime guarantees of the JavaScript specification. Other resources, such as network requests, which are independent from the main context, are available to the worker context. The web worker and main thread context can communicate by passing messages to each other, which are handled by their respective event loops. This allows the result of a calculation which happened in the worker context, to be passed to the main context and then be made visible to the user by showing the result in the DOM
+  .
 
   
   \newpage
@@ -247,28 +245,13 @@
 
   
   \subsection{Web workers}
+
+  Web workers allow us to spawn a seperate execution context, which behaves different then the main execution context. Worker contexts are also treated differently by browsers with regards to timer throttling in the background. Timers created with \texttt{setInterval()} or \texttt{setTimeout()} inside the worker context are not subject to the throttling when the corresponding web page moves to the background. This fact is used by the library worker-timers \cite{worker-timers}, which implements a broker and scheduler for timer tasks which are not throttled when the page moves to the background. The scheduler component runs inside the web worker, whereas the broker is run from the main execution context and dispatches messages when a timer was created or cleared via \texttt{postMessage()} to the worker context. The scheduler then sets an appropriate interval inside the worker context. When the timer inside the worker context fires, the scheduler posts a message to the main thread, which then calls the scheduled function. Through this indirection, the main thread can schedule timers with the worker-timers library, as if it was using the native window timers, but without the throttling behaviour, when the page is in the background. We created a test case with our measuring framework, how each browser behaves with this workaround.
   
-  Using the worker-timers\footnote{\url{https://github.com/chrisguttandin/worker-timers}} library to run a scheduler on a web worker, which calls a callback on the main loop. This circumenvents the setInterval throttling, when a browser tab is in the background.
+  Chrome and Firefox do not throttle timers in web worker context for background tabs at all. This means you can max out the main thread context with the worker-timers library for indefinite time.
+
+  Safari does also not throttle timers in web worker context for background tabs, but it will detect significant energy usage and may reload the page after constant time with high CPU usage. There is also a feature in macOS called AppNap, which might suspend the browser at whole, when Safari itself is not visible to the user. This feature kicks in, when the operating system decides, that the browser does not provide critical functionality at the moment, e.g. a pending download process,  and is also not visible. When the user is interacting with the Safari, but not the background tab itself then AppNap will not be invoked.
   
-  \subsection{Service workers}
-
-  Service workers have advantages. They run independent of the browser tab. They stay can stay aliver after the browser tab, which installed the service worker is closed.
-
-  \begin{itemize}   
-  \item Multiple methods for background execution:
-
-  \item Simple set interval after activation
-
-  \item In response to network request (corresponding website has to be open to trigger a network call)
-
-  \item Website push notifications (has to be allowed by user)
-
-  \item Web Background Synchronization API\footnote{\url{https://wicg.github.io/BackgroundSync/spec/}}
-  \end{itemize}
-
-  
-
-  Safari reloads background tabs which use too much energy after around 8 minutes with the message ``This webpage was reloaded because it was using significant energy.''.
 
   \subsection{Summary}
 
@@ -302,6 +285,32 @@
     \label{tab:browser-throttling}
   \end{table}
  
+
+  \subsection{Future research}
+
+  We have limited our detailed analysis of background execution methods to these methods listed above, but the measuring framework we developed can be used for further investigation of other methods to achieve arbitrary background execution.
+
+  When new HTML5 APIs become available, the feasability for background execution can be easily tested with our measuring framework.
+
+  Chrome and Firefox have adopted a rapid release cycle with new major releases of their product every couple weeks. When new versions are released with new energy conserving features, our research can be reliablty be verified with these new browser versions. 
+  
+  \subsubsection{Service workers}
+
+  A notable omission to our detailed analysis are service workers. Although they have a similar name as web workers, they serve a complete different purpose.
+
+  Service workers have advantages. They run independent of the browser tab. They stay can stay aliver after the browser tab, which installed the service worker is closed.
+
+  \begin{itemize}   
+  \item Multiple methods for background execution:
+
+  \item Simple set interval after activation
+
+  \item In response to network request (corresponding website has to be open to trigger a network call)
+
+  \item Website push notifications (has to be allowed by user)
+
+  \item Web Background Synchronization API\footnote{\url{https://wicg.github.io/BackgroundSync/spec/}}
+  \end{itemize}
   
 
 
