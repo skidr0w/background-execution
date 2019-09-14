@@ -54,7 +54,6 @@
   \department{Fachbereich Informatik}
   \group{Security Engineering}
   \dateofexam{\today}{\today}
-  \tuprints{12345}{1234}
   \makethesistitle
   \affidavit{Yannick Reifschneider}
 
@@ -255,6 +254,14 @@
 
   \subsection{Summary}
 
+  In this section we analysed the behaviour of background tabs for desktop and mobile browsers. We saw that all browsers employ a timer throttling when the page is in the background. Chrome and Firefox use a budget-based timer throttling approach, whereas Safari increases the time between timer calls with every invocation. These timer throttlings can be circumvented by using the \texttt{postMessage()} API, by using web workers or by opening a websocket connection or an AudioContext. With all circumvention methods, we can saturate the main thread for indefinite amount of time in Chrome and Firefox. Only Safari detects continuous high CPU usage and reloads the page when it is using significant energy.
+
+  The timer throttling does not protect users from malicous web sites, which actively try to use CPU time when they are in the background. It can only be viewed as a battery conserving method for most web sites.
+
+  To protect users from unwanted CPU usage of background tabs, browsers should 
+
+  
+
   \begin{table}
     \centering
     \begin{tabular}{ c | p{4,5cm} | p{4,5cm} | p{4,5cm} }
@@ -290,34 +297,20 @@
 
   We have limited our detailed analysis of background execution methods to these methods listed above, but the measuring framework we developed can be used for further investigation of other methods to achieve arbitrary background execution.
 
-  When new HTML5 APIs become available, the feasability for background execution can be easily tested with our measuring framework.
+  \subsubsection{Future browser updates and new APIs}
 
-  Chrome and Firefox have adopted a rapid release cycle with new major releases of their product every couple weeks. When new versions are released with new energy conserving features, our research can be reliablty be verified with these new browser versions. 
+  Chrome and Firefox have adopted a rapid release cycle with new major releases of their product every couple weeks. When new versions are released with new energy conserving features, our research can be reliablty be verified with these new browser versions. Additionally with every major update, browser may ship new experimental APIs, which can be investigated for achieving background execution. These experimental and browser specific APIs may become a new HTML5 standard API. This is also a trend which emerged in the last years. New HTML5 standardization usually emerges by a browser implementing new features in a vendor specific API. When this API is proven to be useful and accepted by web site authors, it is converted to a API design specification to be implemented by other browsers.
   
   \subsubsection{Service workers}
 
-  A notable omission to our detailed analysis are service workers. Although they have a similar name as web workers, they serve a complete different purpose.
+  A notable omission to our detailed analysis are service workers. Although they have a similar name as web workers, they serve a complete different purpose. Service workers are complementary scripts, which belong to an URL for which they are registered. The service worker is invoked by the browser in response to certain events, which can be triggered by the website but also by the browser or the server which hosts the web site. Service workers are decoupled from the lifetime of the web page which registered the service worker. If two tabs of the same page are open, only one service worker is used by the browser to handle the events for these two tabs. The main use cases for service workers at the moment are a) providing a offline capable web site and b) allowing web site push notifications. To implement offline capable web sites, the service worker registers for intercepting network requests from the web site. If the user is offline and tries to do a network request, the service worker uses a cached response to handle the request or saves the payload for sending it later, when the user is online again. Service workers try to close the gap between web and native applications and may be extended to support more functionality.
 
-  Service workers have advantages. They run independent of the browser tab. They stay can stay aliver after the browser tab, which installed the service worker is closed.
-
-  \begin{itemize}   
-  \item Multiple methods for background execution:
-
-  \item Simple set interval after activation
-
-  \item In response to network request (corresponding website has to be open to trigger a network call)
-
-  \item Website push notifications (has to be allowed by user)
-
-  \item Web Background Synchronization API\footnote{\url{https://wicg.github.io/BackgroundSync/spec/}}
-  \end{itemize}
-  
-
+  We omitted the analysis of service workers, because the service workers specifications explicitly recommends, to terminate service workers which take longer then expected to perform their respective tasks. It could be possible, that browser implementations to not adhere to this recommendation, but this should be considered a browser bug and not intended behaviour. Our reseach instead focusses on the circumvention of battery conserving features of the browser implementations.
 
   \newpage
   \section{Tracing of background execution on popular websites}
 
-  In the first part of this thesis, we identified different methods to circumvent the default browser throttling mechanisms. With these findings in mind we can now trace popular websites\footnote{We used the first one thousand web sites of the Alexa Top 1m Website list} to analyse if these circumenvtion methods are used in the wild. Using the Alexa Top 1 million website list, we measure the average CPU usage of the websites. When we aggregate these tracing result, we can determine, if the browser throttling mechanisms are suiteable to limit CPU usage or if websites use these methods to actively or inadvertently bypass the background throttling mechanisms.
+  In the first part of this thesis, we identified different methods to circumvent the default browser throttling mechanisms. With these findings in mind we can now trace popular websites\footnote{We used the first one thousand web sites of the Alexa Top 1m Website list} to analyse if these circumenvtion methods are used in the wild. Using the Alexa Top 1 million website list, we measure the average CPU usage of the websites. When we aggregate these tracing result, we can determine if the browser throttling mechanisms are suiteable to limit CPU usage or if websites use these methods to actively or inadvertently bypass the background throttling mechanisms.
   
   \subsection{Automated measuring of background execution}
 
