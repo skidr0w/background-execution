@@ -256,11 +256,35 @@
 
   In this section we analysed the behaviour of background tabs for desktop and mobile browsers. We saw that all browsers employ a timer throttling when the page is in the background. Chrome and Firefox use a budget-based timer throttling approach, whereas Safari increases the time between timer calls with every invocation. These timer throttlings can be circumvented by using the \texttt{postMessage()} API, by using web workers or by opening a websocket connection or an AudioContext. With all circumvention methods, we can saturate the main thread for indefinite amount of time in Chrome and Firefox. Only Safari detects continuous high CPU usage and reloads the page when it is using significant energy.
 
-  The timer throttling does not protect users from malicous web sites, which actively try to use CPU time when they are in the background. It can only be viewed as a battery conserving method for most web sites.
-
-  To protect users from unwanted CPU usage of background tabs, browsers should 
-
-  
+  \begin{table}
+    \centering
+    \begin{tabular}{ c | p{4,5cm} | p{4,5cm} | p{4,5cm} }
+      \multirow{2}{*}{Method} & \multicolumn{3}{c}{Browser} \\
+      \cline{2-4}
+                              & \multicolumn{1}{|c|}{Google Chrome} & \multicolumn{1}{|c|}{Mozilla Firefox} & \multicolumn{1}{|c|}{Apple Safari} \\
+      \hline
+      Timers & Coalesced invocations at most once per second.
+               Budget-based throttling after 10 seconds in background.
+                              & Next invocation at least one second after last invocation.
+                                Capped budget-based throttling after 30 seconds in background.
+                              & Coalesced invocations. Time between invocations increases. \\
+      \hline
+      Timers+WS
+                              & Coalesced invocations at most once per second. No budget-based throttling.
+                              & Next invocation at least one second after last invocation. No budget-based throttling.
+                              & Coalesced invocations. Time between invocations increases. \\
+      \hline
+      \texttt{postMessage}    & No throttling
+                              & No throttling
+                              & No throttling, but page gets reloaded when it is using significant energy \\
+      \hline
+      Web Worker              & No throttling
+                              & No throttling
+                              & No throttling, but page gets reloaded when it is using significant energy
+    \end{tabular}
+    \caption{Summary of desktop browser background tab behaviour}
+    \label{tab:desktop-browser-background}
+  \end{table}
 
   \begin{table}
     \centering
@@ -288,8 +312,8 @@
                               & No throttling
                               & No throttling, but page gets reloaded when it is using significant energy
     \end{tabular}
-    \caption{Summary of desktop browser throttling behaviour}
-    \label{tab:browser-throttling}
+    \caption{Summary of mobile browser background tab behaviour}
+    \label{tab:mobile-browser-background}
   \end{table}
  
 
@@ -335,6 +359,27 @@
   
   \newpage
   \section{Conclusion}
+
+  The timer throttling does not protect users from malicous web sites, which actively try to use CPU time when they are in the background. It can only be viewed as a battery conserving method for most web sites.
+
+  To protect users from unwanted CPU usage of background tabs, browsers should suspend tabs completely when they are not visible to the user. This goal is already acknowledged from Google Chrome developers as stated in \cite{chrome-background-tabs-roadmap}, although the roadmap for implementation is not adhered to.
+
+  Suspending all background tabs will of course break legitimate use of background timers for web sites, where users expect the page to update in the background. Safari implemented a good interim solution by detecting high energy consumption of background tabs and reloading them, when they reach a certain threshold. This solution allows web site to run computation in the background but only if it does impact battery life too much, but it protects users from unwanted CPU usage and battery drain from web miners or other high CPU workloads. We propse two possible solutions for browser vendors to let user-chosen web apps not become suspended when in the background, while still suspending all other web sites:
+
+  \begin{figure}
+    \centering
+    \includegraphics[width=0.4\textwidth]{images/microphone-permission.png}
+    \caption{Chrome website permission dialog}
+    \label{fig:chrome-permission-dialog}
+  \end{figure}
+
+  One solution could be, to make background execution a permission, which web sites have to explicitly ask for. Browser could then display a popup where users can allow or deny the use of background execution. This popup based permission system is already implemented for other privacy related activities, for example when a web site ask for the users location or access to camera and microphone or when a web site wants to send push notifications. Figure \ref{fig:chrome-permission-dialog} shows how these dialog look like for access to the users microphone. One could argue, that even more permission popups could train users to blindly accept, whatever is shown to them. This behaviour is also reinforced by numerous cookie and policy permission dialogs as implemented to conform to GDPR requirements. On the other hand, cookie and tracking policy permissions are shown inside the web site frame, whereas the proposed background execution permission dialog should be shown from the browser UI and can therefore be recognized as a more important dialog. Web sites would then have to opt in to not be suspended when in the background via a new API. The question remains when this permission popup should be shown two the user. User experience research shows \textbf{TODO: search for proof}, that users are more likely to give permission for elevated access, when the web site first needs them and the usage of these permissions is obvous to the user. A good example is the microphone or camera permission dialog. Consider a video conferencing web sites, where these dialogs could be shown, when the users tries to join a call. For background execution permission the natural time, when the web site could ask for this permission is, when the user switches to another tab, but then the context of the web site is already lost and it could be confusing to the user, to then ask for the permission. Another obvious time would be, when the user first visits the web site, but this behaviour contradicts the experience, that users are less likely to give permissions as soon as the web site is loaded. It may not be clear to the user at this time, why the web site needs background execution to function properly. Another approach would be to show the dialog as soon, as the user reopens the tab a couple of times after it was in the background. At that time, it is confirmed, that the user frequently checks the content of this web site. Also the permission dialog could explain to the user, that the content of this page does not refresh in the background without the explicit permission for background execution.
+
+  Another solution would be to allow pinned tabs to not become suspended, when they are not visible.
+
+  Pinned tabs, web site added to home screen: All major browsers support the feature of pinned tabs.
+
+  
 
   
   \newpage
