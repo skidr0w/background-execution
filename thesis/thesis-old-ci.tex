@@ -1,62 +1,6 @@
-%%% Local Variables: 
-%%% mode: latex 
-%%% TeX-engine: luatex
-%%% TeX-master: t 
-%%% End:
-\documentclass[
-	ngerman,
-	ruledheaders=section,%Ebene bis zu der die Überschriften mit Linien abgetrennt werden, vgl. DEMO-TUDaPub
-	class=report,% Basisdokumentenklasse. Wählt die Korrespondierende KOMA-Script Klasse
-	thesis={type=bachelor},% Dokumententyp Thesis, für Dissertationen siehe die Demo-Datei DEMO-TUDaPhd
-	accentcolor=9c,% Auswahl der Akzentfarbe
-	custommargins=true,% Ränder werden mithilfe von typearea automatisch berechnet
-	marginpar=false,% Kopfzeile und Fußzeile erstrecken sich nicht über die Randnotizspalte
-	%BCOR=5mm,%Bindekorrektur, falls notwendig
-	parskip=half-,%Absatzkennzeichnung durch Abstand vgl. KOMA-Sript
-	fontsize=11pt,%Basisschriftgröße laut Corporate Design ist mit 9pt häufig zu klein
-%	logofile=example-image, %Falls die Logo Dateien nicht vorliegen
-]{tudapub}
 
-
-% Der folgende Block ist nur bei pdfTeX auf Versionen vor April 2018 notwendig
-\usepackage{iftex}
-\ifPDFTeX
-\usepackage[utf8]{inputenc}%kompatibilität mit TeX Versionen vor April 2018
-\fi
-
-%%%%%%%%%%%%%%%%%%%
-%Sprachanpassung & Verbesserte Trennregeln
-%%%%%%%%%%%%%%%%%%%
-\usepackage[english, main=english]{babel}
-\usepackage[autostyle]{csquotes}% Anführungszeichen vereinfacht
-\usepackage{microtype}
-
-
-%%%%%%%%%%%%%%%%%%%
-%Literaturverzeichnis
-%%%%%%%%%%%%%%%%%%%
-\usepackage{biblatex}   % Literaturverzeichnis
-\bibliography{thesis}
-%\addbibresource{thesis.bib}
-
-
-%%%%%%%%%%%%%%%%%%%
-%Tabellen
-%%%%%%%%%%%%%%%%%%%
-%\usepackage{array}     % Basispaket für Tabellenkonfiguration, wird von den folgenden automatisch geladen
-\usepackage{tabularx}   % Tabellen, die sich automatisch der Breite anpassen
-%\usepackage{longtable} % Mehrseitige Tabellen
-%\usepackage{xltabular} % Mehrseitige Tabellen mit anpassarer Breite
-\usepackage{booktabs}   % Verbesserte Möglichkeiten für Tabellenlayout über horizontale Linien
-
-%%%%%%%%%%%%%%%%%%%
-%Paketvorschläge Mathematik
-%%%%%%%%%%%%%%%%%%%
-%\usepackage{mathtools} % erweiterte Fassung von amsmath
-%\usepackage{amssymb}   % erweiterter Zeichensatz
-%\usepackage{siunitx}   % Einheiten
-
-
+\documentclass[article,type=bsc,colorback,accentcolor=tud9c]{tudthesis}
+%\usepackage{ngerman}
 \usepackage{hyperref}
 \usepackage{biblatex}
 \usepackage{tikz}
@@ -65,15 +9,6 @@
 \usepackage{multirow}
 \usepackage{amsmath}
 
-
-
-%Formatierungen für Beispiele in diesem Dokument. Im Allgemeinen nicht notwendig!
-\let\file\texttt
-\let\code\texttt
-
-\usepackage{pifont}% Zapf-Dingbats Symbole
-\newcommand*{\FeatureTrue}{\ding{52}}
-\newcommand*{\FeatureFalse}{\ding{56}}
 
 \lstdefinelanguage{JavaScript}{
   morekeywords=[1]{break, continue, delete, else, for, function, if, in,
@@ -99,51 +34,38 @@
   basicstyle=\ttfamily
 }
 
-% these words should not by hyphenated
-\hyphenation{postMessage}
-\hyphenation{setTimeout}
-\hyphenation{setInterval}
 
+\addbibresource{thesis.bib}
 
-
-\begin{document}
-
-\Metadata{
-	title=Analysis of Methods for Background Execution in Modern Web Applications,
-	author=Yannick Reifschneider
+\newcommand{\getmydate}{%
+  \ifcase\month%
+    \or Januar\or Februar\or M\"arz%
+    \or April\or Mai\or Juni\or Juli%
+    \or August\or September\or Oktober%
+    \or November\or Dezember%
+  \fi\ \number\year%
 }
 
-\title{Analysis of Methods for Background Execution in Modern Web Applications}
-\subtitle{Analyse von Verfahren für Hintergrundausführung in modernen Webanwendungen}
-\author[Y. Reifschneider]{Yannick Reifschneider}%optionales Argument ist die Signatur, 
-\reviewer{Nikolay Matyunin \and Prof. Dr. Stefan Katzenbeisser}%Gutachter
+\begin{document}
+  \thesistitle{Analysis of Methods for Background Execution in Modern Web Applications}%
+    {Analyse von Verfahren für Hintergrundausführung in modernen Webanwendungen}
+  \author{Yannick Reifschneider}
+  \referee{Nikolay Matyunin}{Prof. Dr. Stefan Katzenbeisser}
+  \department{Fachbereich Informatik}
+  \group{Security Engineering}
+  \dateofexam{\today}{\today}
+  \makethesistitle
+  \affidavit{Yannick Reifschneider}
 
-%Diese Felder erden untereinander auf der Titelseite platziert. 
-%\department ist eine notwendige Angabe, siehe auch dem Abschnitt `Abweichung von den Vorgaben für die Titelseite'
-\department{inf} % Das Kürzel wird automatisch ersetzt und als Studienfach gewählt, siehe Liste der Kürzel im Dokument.
-\institute{Security Engineering}
-%\group{Arbeitsgruppe}
-
-\submissiondate{\today}
-\examdate{\today}
-
-%	\tuprints{urn=1234,printid=12345}
-%	\dedication{Für alle, die \TeX{} nutzen.}
-
-\maketitle
-
-\affidavit
-
-\tableofcontents
-
+  \tableofcontents
 
   \newpage
-  \chapter{Abstract}
+  \section{Abstract}
 
   In this thesis we analyse modern browsers regarding their behaviour of JavaScript code exection in background tabs. We show that the energy conserving methods of desktop browsers can easily be circumvented to do arbitrary calculations for unlimited time while the web site is not user visible. With these findings we trace popular websites to see if they use similar methods to execute uninterrupted in the background.
 
   \newpage
-  \chapter{Introduction}
+  \section{Introduction}
 
   Web technology received rapid advances in the last years. Many websites not only deliver static information in form of text and images, but are complete highly dynamic applications which compete with traditional software products. For many of the standard business applications like an E-mail client, a word processor or even a bitmap graphic manipulation software there are alterantives\footnote{\url{https://www.google.com/gmail/about/}}\footnote{\url{https://products.office.com/en-us/free-office-online-for-the-web}}\footnote{\url{https://www.photopea.com/}}, which are developed using web technologies and used via a modern web browser. The web browser has grown from a renderer of static information to the operating system of web applications. Some reasons for the rise of these web applications are, that browsers are getting more capable every year and the JavaScript performance is increasing drastically so that these applications are possible in the first place. Developing a web application instead of traditional software has also many benefits for the developer of said software. Web apps don't need installation, just a modern web browser, which comes preinstalled with any common operating system and mobile device. Visiting a web site to try out a piece of software is a much smaller hurdle to overcome then downloading, installing and running a piece of software. These reasons make the web a popular platform for developing new applications.
 
@@ -153,7 +75,7 @@
 
   In this thesis we find out, if the throttling mechanisms employed by browser vendors can be circumvented, so that web sites which are not visible to the browser can gain code execution for arbitrary time. We compare the different throttling mechanisms between desktop and mobile browsers and we trace popular websites to see if the found cirumvention methods are actively used in the wild.
   
-  \section{Motivation}
+  \subsection{Motivation}
 
   The JavaScript language was designed as an extension to HTML and CSS in the early days of the world wide web, with the goal to enable user interaction with web pages. Although JavaScript is nowadays used for much more then just simple event handlers for user interactions, the basic principle of the web did not change: When a user visits a web site, the browser downloads all resources belonging to this web site, like HTML, images and also scripts. These scripts are run, to build up the complete website. When users visit a web page and do not disable JavaScript completly, they implicitly allow this web site to execute arbitrary code on their machine. This implicit trust is also a major design factor for HTML5 APIs. The goal of the HTML5 API designers is, to allow for new kind of applications, without allowing a web application too much control over the machine it is running on. Nevertheless there are numerous activities, which malicous entities could perform with access to a web site with high amount of daily visits.
 
@@ -165,7 +87,7 @@
 
   
 
-  \section{Related works}
+  \subsection{Related works}
 
   \begin{itemize}
 
@@ -186,13 +108,13 @@
 
   
   \newpage
-  \chapter{Background}
+  \section{Background}
 
   To understand, how JavaScript handles tasks and concurrency, whe first have to understand how a JavaScript execution context is structured and how the event loop handles long running tasks.
 
-  \section{The JavaScript execution context and the event loop}
+  \subsection{The JavaScript execution context and the event loop}
 
-  A JavaScript execution context is organized into a task queue, a stack and a heap \cite{mdn-event-loop}.
+  A JavaScript execution context is organized into a task queue, a stack and a heap \autocite{mdn-event-loop}.
 
   The task queue defines a list of tasks, which should be executed by the JavaScript runtime. A task consist of a callback function and optional arguments to this callback function. The JavaScript runtime implements an event loop, which processes the task queue. The event loop, waits for tasks to be added to the task queue. When the task queue is not empty, the event loop removes the first task from the queue and executes its corresponding callback function with the provided arguments. This is repeated until the task queue is empty again.
 
@@ -205,19 +127,19 @@
   Tasks can be added to the task queue by registering event listeners for events, for example a onclick handler of a button. When this event occurs, the runtime then adds a new tasks to the task queue. Tasks can also be added by JavaScript code itself, for example by using a timer.
 
   
-  \section{The JavaScript concurrency model}
+  \subsection{The JavaScript concurrency model}
   
   The JavaScript language does not support multi threading. Each browser tab has it's own JavaScript execution context. This execution context is tied to the rendering of the page, as explained in the section before. As long running JavaScripts tasks block the rendering of the web page, calls to potentially long running functions or other side effects are almost never blocking, but instead register a callback function to be called, when the result of function returns. The runtime then performs the side effect and creates a new task in the task queue with the registered callback function and the result of the side effect as a parameter for the callback. With this workaround it is possible to perform multiple long running tasks at the same time, by splitting the work into smaller tasks, which are suspended when they are waiting for other input and are resumed when the result becomes available.
   
   
-  \section{Web workers}
+  \subsection{Web workers}
 
   Web workers are a addition to the HTML5 API, to overcome some of the limitations, which were described before. Web workers create a new execution context, which is \textit{not tied} to the browser rendering. They were introduced to perform long running uninterruptable calculations, which would block the rendering process for too long, if they would be executed in the main browser context. They don't share variables or resources with the main JavaScript context. The worker context therefore does not have access to the DOM of the web page, because that would introduce shared memory between the worker and main context, which would invalidate the runtime guarantees of the JavaScript specification. Other resources, such as network requests, which are independent from the main context, are available to the worker context. The web worker and main thread context can communicate by passing messages to each other, which are handled by their respective event loops. This allows the result of a calculation which happened in the worker context, to be passed to the main context and then be made visible to the user by showing the result in the DOM
   .
 
   
   \newpage
-  \chapter{Analysis of different background execution methods}
+  \section{Analysis of different background execution methods}
 
   As we have shown in the motivation section of this thesis, there numerous incentives to execute code in the background. Browsers vendors in contrast are motivated to limit the energy impact of JavaScript code in background tabs as much as possible to prolong the battery life of the users device. To assess the behaviour of the browser throttling mechanisms, we developed a framework to compare different methods for achieving background code execution. The framework handles the benchmarking and visualisation of each method. If new HTML5 APIs are released, that allow for a new method of scheduling tasks, this method can be plugged into the framework to compare it against existing methods. The framework also allows easy reproducability of our analysis, to test whether the throttling mechanisms of browsers changed in new versions. In our analysis we evaluate the throttling mechanisms employed by the following desktop browsers:
 
@@ -238,7 +160,7 @@
   On iOS we only analyse Mobile Safari, because Apple does not allow other browser engines in the Apple AppStore. Every other browser app has to use the system-provided webview to be in accordance with § 2.5.6 from Apple Review Guidelines\footnote{\url{https://developer.apple.com/app-store/review/guidelines/\#software-requirements}}. On Android, we can differentiate between different browser engines.
   
   
-  \section{Methodology}
+  \subsection{Methodology}
 
   In the following sections we look at different methods for scheduling JavaScript code, when the tab is in the background. We describe how each browser behaves when this method is used to execute JavaScript code in the background and we use our measureing framework to compare the browser behaviour for each method.
 
@@ -255,7 +177,7 @@
   With this data we can then plot the computed CPU usage over time and compare different browsers for each scenario.
 
   
-  \section{Timer tasks}
+  \subsection{Timer tasks}
 
   The default method to schedule new tasks for execution is to use the function \texttt{setTimeout()} or \texttt{setInterval()} which are available on window or worker global scope. These methods take at least two arguments. The first is the function which should be scheduled as a task. The second argument is the time in milliseconds to wait before the task should be executed. As this is the most straighforward way to schedule tasks, this method might be the one which gets throttled the most. The WHATWG specification for timers \cite{whatwg-timers} even explicitly defines an optional waiting time which is user-agent defined to allow for optimization of power usage. Also, when \texttt{setTimeout()} calls are nested or \texttt{setInterval()} repeats the 5th time, the minimum waiting time is incresed to be 4ms.
 
@@ -309,7 +231,7 @@
   \end{figure}
 
 
-  \section{\texttt{postMessage()} tasks}
+  \subsection{\texttt{postMessage()} tasks}
 
   Besides \texttt{setTimeout()} or \texttt{setInterval()} there exists another API for putting tasks in the JavaScript task queue. The function \texttt{postMessage()} available on the window and worker scope is available to allow for communication between windows of different origins or between main thread and worker thread \cite{mdn-postmessage}. As each window or worker has its own JavaScript execution context, the communication between these context must happen explicitly via \texttt{postMessage()} calls. The receiving context has to register for the \texttt{message} event on the window or worker object. A call to \texttt{postMessage()} with the receiver set to a window or worker who registered for the event, adds a new task to the task queue for this window. The scheduling of tasks, which are created with the before mentioned method, are not subject to the throttling as explained in the timer tasks section. This is also true for when a \texttt{postmessage()} call is sent and received from the same context. Tasks created with this method are also not subject to the minimum delay of 4 ms as timer tasks are \cite{zero-delay-timeouts}.
 
@@ -319,7 +241,7 @@
   
 
   
-  \section{Web workers}
+  \subsection{Web workers}
 
   Web workers allow us to spawn a seperate execution context, which behaves different then the main execution context \cite{mdn-worker}. Worker contexts are also treated differently by browsers with regards to timer throttling in the background. Timers created with \texttt{setInterval()} or \texttt{setTimeout()} inside the worker context are not subject to the throttling when the corresponding web page moves to the background. This fact is used by the library worker-timers \cite{worker-timers}, which implements a broker and scheduler for timer tasks which are not throttled when the page moves to the background. The scheduler component runs inside the web worker, whereas the broker is run from the main execution context and dispatches messages when a timer was created or cleared via \texttt{postMessage()} to the worker context. The scheduler then sets an appropriate interval inside the worker context. When the timer inside the worker context fires, the scheduler posts a message to the main thread, which then calls the scheduled function. Through this indirection, the main thread can schedule timers with the worker-timers library, as if it was using the native window timers, but without the throttling behaviour, when the page is in the background. We created a test case with our measuring framework, how each browser behaves with this workaround.
   
@@ -328,7 +250,7 @@
   Safari does also not throttle timers in web worker context for background tabs, but it will detect significant energy usage and may reload the page after constant time with high CPU usage. There is also a feature in the macOS operating system called AppNap, which might suspend the browser at whole, when Safari itself is not visible to the user \cite{osx-app-nap}. This feature kicks in, when the operating system decides, that the browser does not provide critical functionality at the moment and is also not visible. When the user is interacting with the Safari, but not the background tab itself then AppNap will not be invoked.
   
 
-  \section{Summary}
+  \subsection{Summary}
 
   In this section we analysed the behaviour of background tabs for desktop and mobile browsers. We saw that all browsers employ a timer throttling when the page is in the background. Chrome and Firefox use a budget-based timer throttling approach, whereas Safari increases the time between timer calls with every invocation. These timer throttlings can be circumvented by using the \texttt{postMessage()} API, by using web workers or by opening a websocket connection or an AudioContext. With all circumvention methods, we can saturate the main thread for indefinite amount of time in Chrome and Firefox. Only Safari detects continuous high CPU usage and reloads the page when it is using significant energy. Table \ref{tab:desktop-browser-background} summarizes the findings for desktops browsers.
 
@@ -366,26 +288,26 @@
 
  
 
-  \section{Future research}
+  \subsection{Future research}
 
   We have limited our detailed analysis of background execution methods to these methods listed above, but the measuring framework we developed can be used for further investigation of other methods to achieve arbitrary background execution.
 
-  \subsection{Future browser updates and new APIs}
+  \subsubsection{Future browser updates and new APIs}
 
   Chrome and Firefox have adopted a rapid release cycle with new major releases of their product every couple weeks. When new versions are released with new energy conserving features, our research can be reliablty be verified with these new browser versions. Additionally with every major update, browser may ship new experimental APIs, which can be investigated for achieving background execution. These experimental and browser specific APIs may become a new HTML5 standard API. This is also a trend which emerged in the last years. New HTML5 standardization usually emerges by a browser implementing new features in a vendor specific API. When this API is proven to be useful and accepted by web site authors, it is converted to a API design specification to be implemented by other browsers.
   
-  \subsection{Service workers}
+  \subsubsection{Service workers}
 
   A notable omission to our detailed analysis are service workers. Although they have a similar name as web workers, they serve a complete different purpose. Service workers are complementary scripts, which belong to an URL for which they are registered. The service worker is invoked by the browser in response to certain events, which can be triggered by the website but also by the browser or the server which hosts the web site. Service workers are decoupled from the lifetime of the web page which registered the service worker. If two tabs of the same page are open, only one service worker is used by the browser to handle the events for these two tabs. The main use cases for service workers at the moment are a) providing a offline capable web site and b) allowing web site push notifications. To implement offline capable web sites, the service worker registers for intercepting network requests from the web site. If the user is offline and tries to do a network request, the service worker uses a cached response to handle the request or saves the payload for sending it later, when the user is online again. Service workers try to close the gap between web and native applications and may be extended to support more functionality.
 
   We omitted the analysis of service workers, because the service workers specifications explicitly recommends, to terminate service workers which take longer then expected to perform their respective tasks. It could be possible, that browser implementations to not adhere to this recommendation, but this should be considered a browser bug and not intended behaviour. Our reseach instead focusses on the circumvention of battery conserving features of the browser implementations.
 
   \newpage
-  \chapter{Tracing of background execution on popular websites}
+  \section{Tracing of background execution on popular websites}
 
   In the first part of our research we identified different methods to circumvent the browser timer throttling mechanisms for brackground tabs. With these findings in mind we can now trace popular websites\footnote{We used the first one thousand web sites of the Alexa Top 1m Website list} to analyse if these circumenvtion methods are used in the wild. Using the Alexa Top 1 million website list, we measure the average CPU usage of the websites. When we aggregate these tracing result, we can determine if the browser throttling mechanisms are suiteable to limit CPU usage or if websites use these methods to actively or inadvertently bypass the background throttling mechanisms.
   
-  \section{Automated measuring of background execution}
+  \subsection{Automated measuring of background execution}
 
   To automate the tracing of popular websites we used the Puppeteer\cite{pptr} library to control and automate Google Chrome. We choose Puppeteer because it allows us to access the Chrome internals like Web Profiler and also inject custom scripts into the loaded page to detect if circumvention methods which are described in part one of this thesis are being used. Puppeteer only allows to control Google Chrome, but with Google Chrome having the greatest market share among common Web browsers this is not a limiting factor.
 
@@ -404,10 +326,10 @@
 
   
   \newpage
-  \chapter{Evaluation of tracing results}
+  \section{Evaluation of tracing results}
   
   \newpage
-  \chapter{Conclusion}
+  \section{Conclusion}
 
   The timer throttling does not protect users from malicous web sites, which actively try to use CPU time when they are in the background. It can only be viewed as a battery conserving method for most web sites.
 
