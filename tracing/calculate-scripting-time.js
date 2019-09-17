@@ -3,16 +3,22 @@ const JSONStream = require('JSONStream');
 const DevtoolsTimelineModel = require('devtools-timeline-model');
 const transform = require('stream-transform');
 
-const WEBSOCKET_CREATED_EVENT_NAME = 'WebSocketCreate';
+//const WEBSOCKET_CREATED_EVENT_NAME = 'WebSocketCreate';
 const WEBSOCKET_CONNECTED_EVENT_NAME = 'WebSocketReceiveHandshakeResponse';
 const WEBSOCKET_DESTROYED_EVENT_NAME = 'WebSocketDestroy';
+const isPageVisibilityHiddenEvent = (event) =>
+  event.name === 'TimeStamp' &&
+  event.args.data.message === 'visibilitychange_hidden';
 
 const calculateScriptingScores = async (traceFilePath) => {
   const timeSlicesWithOpenWebSocket = [];
   let openWebSockets = [];
   let webSocketStartedTs;
+  let backgroundStartedTs;
   const tapWebSocketEvents = transform((event) => {
-    if (event.name === WEBSOCKET_CONNECTED_EVENT_NAME) {
+    if (isPageVisibilityHiddenEvent(event)) {
+      backgroundStartedTs = event.ts / 1000;
+    } else if (event.name === WEBSOCKET_CONNECTED_EVENT_NAME) {
       if (openWebSockets.length === 0) {
         webSocketStartedTs = event.ts / 1000;
       }
@@ -53,7 +59,6 @@ const calculateScriptingScores = async (traceFilePath) => {
       0,
     );
 
-  debugger;
   const scriptingTimeWorker = eventCategoriesForTracks
     .filter(
       (eventCategoriesForTracks) =>
@@ -99,10 +104,38 @@ const calculateScriptingScores = async (traceFilePath) => {
     0,
   );
 
+  let scriptingTimeBackground;
+  let recordingTimeBackground;
+  if (backgroundStartedTs) {
+    recordingTimeBackground =
+      tracingModel.maximumRecordTime() - backgroundStartedTs;
+    const eventCategoriesInBackground = model.bottomUpGroupBy(
+      'Category',
+      backgroundStartedTs,
+      Infinity,
+    );
+    scriptingTimeBackground = eventCategoriesInBackground
+      .map((eventCategories) =>
+        eventCategories.bottomUp.children().get('scripting'),
+      )
+      .filter((scripting) => scripting !== undefined)
+      .map((scripting) => scripting.totalTime)
+      .reduce(
+        (totalScripting, scriptingTime) => totalScripting + scriptingTime,
+        0,
+      );
+  } else {
+    console.log('Could not find pagevisibility hidden event');
+  }
+
   return {
     global: {
       scriptingTime: scriptingTimeGlobal,
       recordingTime,
+    },
+    background: {
+      scriptingTime: scriptingTimeBackground,
+      recordingTime: recordingTimeBackground,
     },
     worker: {
       scriptingTime: scriptingTimeWorker,
