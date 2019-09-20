@@ -280,7 +280,7 @@
     \label{fig:timer}
   \end{figure}
 
-  \subsection{Timer tasks with WebSocket / AudioContext}
+  \section{Timer tasks with WebSocket / AudioContext}
 
   Browser vendors try to strike a balance between throttling background pages as much as possible to conserve energy and keep the system more responsive and not breaking existing web applications. As backwards compatibility is an important factor, some browsers reduce their throttling, when they detect, that a web application might need more background processing time. The detection, if a web site needs more processing time is difficult though. Due to the dynamic nature of JavaScript, static analysis of web scripts is very difficult. Therefore browsers use a simple heuristic, to determine if their default throttling should be reduced.
 
@@ -325,6 +325,22 @@
   Safari does also not throttle timers in web worker context for background tabs, but it will detect significant energy usage and may reload the page after constant time with high CPU usage. There is also a feature in the macOS operating system called AppNap, which might suspend the browser at whole, when Safari itself is not visible to the user \cite{osx-app-nap}. This feature kicks in, when the operating system decides, that the browser does not provide critical functionality at the moment and is also not visible. When the user is interacting with the Safari, but not the background tab itself then AppNap will not be invoked.
   
 
+  \section{Future research}
+
+  We have limited our detailed analysis of background execution methods to these methods listed above, but the measuring framework we developed can be used for further investigation of other methods to achieve arbitrary background execution.
+
+  \subsection{Future browser updates and new APIs}
+
+  Chrome and Firefox have adopted a rapid release cycle with new major releases of their product every couple weeks. When new versions are released with new energy conserving features, our research can be reliablty be verified with these new browser versions. Additionally with every major update, browser may ship new experimental APIs, which can be investigated for achieving background execution. These experimental and browser specific APIs may become a new HTML5 standard API. This is also a trend which emerged in the last years. New HTML5 standardization usually emerges by a browser implementing new features in a vendor specific API. When this API is proven to be useful and accepted by web site authors, it is converted to a API design specification to be implemented by other browsers.
+  
+  \subsection{Service workers}
+
+  A notable omission to our detailed analysis are service workers. Although they have a similar name as web workers, they serve a complete different purpose. Service workers are complementary scripts, which belong to an URL for which they are registered. The service worker is invoked by the browser in response to certain events, which can be triggered by the website but also by the browser or the server which hosts the web site. Service workers are decoupled from the lifetime of the web page which registered the service worker. If two tabs of the same page are open, only one service worker is used by the browser to handle the events for these two tabs. The main use cases for service workers at the moment are a) providing a offline capable web site and b) allowing web site push notifications. To implement offline capable web sites, the service worker registers for intercepting network requests from the web site. If the user is offline and tries to do a network request, the service worker uses a cached response to handle the request or saves the payload for sending it later, when the user is online again. Service workers try to close the gap between web and native applications and may be extended to support more functionality.
+
+  We omitted the analysis of service workers, because the service workers specifications explicitly recommends, to terminate service workers which take longer then expected to perform their respective tasks. It could be possible, that browser implementations to not adhere to this recommendation, but this should be considered a browser bug and not intended behaviour. Our reseach instead focusses on the circumvention of battery conserving features of the browser implementations.
+
+
+  
   \section{Summary}
 
   In this section we analysed the behaviour of background tabs for desktop and mobile browsers. We saw that all browsers employ a timer throttling when the page is in the background. Chrome and Firefox use a budget-based timer throttling approach, whereas Safari increases the time between timer calls with every invocation. These timer throttlings can be circumvented by using the \texttt{postMessage()} API, by using web workers or by opening a websocket connection or an AudioContext. With all circumvention methods, we can saturate the main thread for indefinite amount of time in Chrome and Firefox. Only Safari detects continuous high CPU usage and reloads the page when it is using significant energy. Table \ref{tab:desktop-browser-background} summarizes the findings for desktops browsers.
@@ -363,20 +379,6 @@
 
  
 
-  \section{Future research}
-
-  We have limited our detailed analysis of background execution methods to these methods listed above, but the measuring framework we developed can be used for further investigation of other methods to achieve arbitrary background execution.
-
-  \subsection{Future browser updates and new APIs}
-
-  Chrome and Firefox have adopted a rapid release cycle with new major releases of their product every couple weeks. When new versions are released with new energy conserving features, our research can be reliablty be verified with these new browser versions. Additionally with every major update, browser may ship new experimental APIs, which can be investigated for achieving background execution. These experimental and browser specific APIs may become a new HTML5 standard API. This is also a trend which emerged in the last years. New HTML5 standardization usually emerges by a browser implementing new features in a vendor specific API. When this API is proven to be useful and accepted by web site authors, it is converted to a API design specification to be implemented by other browsers.
-  
-  \subsection{Service workers}
-
-  A notable omission to our detailed analysis are service workers. Although they have a similar name as web workers, they serve a complete different purpose. Service workers are complementary scripts, which belong to an URL for which they are registered. The service worker is invoked by the browser in response to certain events, which can be triggered by the website but also by the browser or the server which hosts the web site. Service workers are decoupled from the lifetime of the web page which registered the service worker. If two tabs of the same page are open, only one service worker is used by the browser to handle the events for these two tabs. The main use cases for service workers at the moment are a) providing a offline capable web site and b) allowing web site push notifications. To implement offline capable web sites, the service worker registers for intercepting network requests from the web site. If the user is offline and tries to do a network request, the service worker uses a cached response to handle the request or saves the payload for sending it later, when the user is online again. Service workers try to close the gap between web and native applications and may be extended to support more functionality.
-
-  We omitted the analysis of service workers, because the service workers specifications explicitly recommends, to terminate service workers which take longer then expected to perform their respective tasks. It could be possible, that browser implementations to not adhere to this recommendation, but this should be considered a browser bug and not intended behaviour. Our reseach instead focusses on the circumvention of battery conserving features of the browser implementations.
-
   \newpage
   \chapter{Tracing of background execution on popular websites}
 
@@ -405,17 +407,55 @@ window.postMessage = function () {
 
   The website trace together with the recoding of the hooked functions allows us to dig deep into what a single website is executing while it is in the background and which methods it used for scheduling the tasks, but to get a better picture of how all traced websites in general behave in the background we need to find a way to compare and aggregate the results of the traces. 
 
-  To compare the result of two traces, it is beneficial to have a single score for each web site. We propose to use the average CPU usage triggered by scripting during the profiling to use as this score. The average CPU usage score can be calculated from the trace file generated by the web profiler. To calculate the CPU usage time for scripting we use the sum of the duration of all JavaScript tasks executed in the main thread as well as in all potentially spawned worker threads. We use the wall clock time for this measurement, because it is a suitable replacement for CPU time in a scenario where the machine on which the measurements are taken is not under any other load from other processes. Additionally this is the same method which Chrome uses for the budget-based throttling calculation \cite{chrome-background-tabs}.
-  
-  By calculating summed duration, in which the website executed JavaScript code in the main thread and in spawned worker threads and dividing the sum by the time the trace was running. A website which uses no JavaScript at all should therefore receive a score of 0, whereas a website which does run uninterupted calculations on the main thread should receive a score of 1. If a website uses multiple worker threads and the machine on which the measurements are taken has more then one physical CPU core, then the website could receive a score which is greater then 1, because all workers could be active at the same time.
+  To compare the result of two traces, it is beneficial to have a single score for each web site. We propose to use the average CPU usage triggered by scripting during the profiling to use as this score. The average CPU usage score can be calculated from the trace file generated by the web profiler. To calculate the CPU usage time for scripting we use the sum of the duration of all JavaScript tasks executed in the main thread as well as in all potentially spawned worker threads. We use the wall clock time for this measurement, because it is a suitable replacement for CPU time in a scenario where the machine on which the measurements are taken is not under any other load from other processes. Additionally this is the same method which Chrome uses for the budget-based throttling calculation \cite{chrome-background-tabs}. By dividing the summed duration of all tasks with the duration of our trace recording we get the average CPU usage score. A website which uses no JavaScript at all should therefore receive a score of 0, whereas a website which does run uninterupted calculations on the main thread should receive a score of 1. If a website uses multiple worker threads and the machine on which the measurements are taken has more then one physical CPU core, then the website could receive a score which is greater then 1, because all workers could be active at the same time. We also compute the average CPU usage score only considering web worker threads as well as the score for the main thread when a WebSocket connection was open. With these additional scores, we can see if the average shifts, when a circumvention method was used.
 
-  The background throttling mechanism put in place by Google Chrome does limit the timers of websites based on a CPU time budget. This budget is currently set so that websites on average only use 1\% of CPU usage. That would equal a score of 0.01 in our proposed metric. This limit gives a good estimation, if websites try to overcome the background throttling mechanism of Chrome. Websites which score greater then 0.01 presumably use one or more methods to prevent the throttling.
+  The background throttling mechanism put in place by Google Chrome does limit the timers of websites based on a CPU time budget. This budget is currently set to regenerate at a rate of 0.01 seconds per second \cite{chrome-background-tabs}. That means that websites on average can only use 1 \% of CPU time for scripting. That would also equal a score of 1 \% in our proposed average CPU usage score. This limit gives a good estimation if websites try to overcome the background throttling mechanism of Chrome. Websites which score far greater then 1 \% presumably use one or more methods to prevent the throttling.
 
   
   \section{Evaluation of tracing results}
+
+  \begin{table}
+    \begin{adjustbox}{center}
+      \begin{tabular}{l | r | c | c | r}
+        Web site           & Avg. CPU usage & WebSocket     & Worker        & \texttt{postMessage()} count \\
+        \hline
+        sports.ru          & 21.817 \%      & \FeatureTrue  & \FeatureFalse & 187                          \\
+        investing.com      & 10.816 \%      & \FeatureTrue  & \FeatureFalse & 7                            \\
+        nba.com            & 7.956 \%       & \FeatureFalse & \FeatureTrue  & 391                          \\
+        binance.com        & 7.184 \%       & \FeatureTrue  & \FeatureFalse & 0                            \\
+        yenisafak.com      & 6.014 \%       & \FeatureTrue  & \FeatureTrue  & 264                          \\
+        mundodeportivo.com & 5.422 \%       & \FeatureFalse & \FeatureFalse & 210                          \\
+        yeniakit.com.tr    & 5.389 \%       & \FeatureTrue  & \FeatureTrue  & 895                          \\
+        independent.co.uk  & 5.336 \%       & \FeatureFalse & \FeatureTrue  & 127                          \\
+        cinecalidad.to     & 5.314 \%       & \FeatureTrue  & \FeatureTrue  & 0                            \\
+        mobafire.com       & 5.199 \%       & \FeatureFalse & \FeatureFalse & 111                          \\
+      \end{tabular}
+    \end{adjustbox}
+    \caption{Top ten web sites with highest average CPU usage}
+    \label{tab:cpu-usage-distribution}
+  \end{table}
+
+  How much \% of web sites are above 1 \% of average CPU usage score.
+
+  Only considiring web sites with workers/websockets, how many are above 1 \%
+
+  histogram
+
+  explain that some tracker networks try to update as fast as they can, even static sites which embed ads.
+
+  postmessage calls are heavily used in sites with high cpu score. they enable communication between iframes of different origins. used for web ad network scripts
+
+  a tracing of a malicous site
+
+  a tracing of a site a high score
+
+  
+  
   
   \newpage
-  \chapter{Conclusion}
+  \chapter{Discussion}
+
+  We showed that the methods described in the analysis section do indeed allow for longer background execution and that these methods are used by popular web sites. Most of the background execution stem from ad networks, which do dynamic bidding processes on the web site. 
 
   The timer throttling does not protect users from malicous web sites, which actively try to use CPU time when they are in the background. It can only be viewed as a battery conserving method for most web sites.
 
@@ -443,6 +483,7 @@ window.postMessage = function () {
 
   Mobile browsers do not have a concept of pinned tabs, but Android and iOS support adding web sites to the home screen. When added to the home screen, a web app can hide the browser chrome for navigation and the address bar to behave more like a fully native app. We propose to give background execution permission to these web sites, which were added to the home screen by the user. This would be the equivalent of a pinned tab on desktop browsers for background execution behaviour.
   
+  \chapter{Conclusion}
 
   
   \newpage
