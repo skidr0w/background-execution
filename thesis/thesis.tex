@@ -112,13 +112,13 @@
 \title{Analysis of Methods for Background Execution in Modern Web Applications}
 \subtitle{Analyse von Verfahren für Hintergrundausführung in modernen Webanwendungen}
 \author[Y. Reifschneider]{Yannick Reifschneider}%optionales Argument ist die Signatur, 
-\reviewer{Nikolay Matyunin \and Prof. Dr. Stefan Katzenbeisser}%Gutachter
+\reviewer{Dipl.-Inf. Nikolay Matyunin \and Prof. Dipl.-Ing. Dr. Stefan Katzenbeisser}%Gutachter
 
 %Diese Felder erden untereinander auf der Titelseite platziert. 
 %\department ist eine notwendige Angabe, siehe auch dem Abschnitt `Abweichung von den Vorgaben für die Titelseite'
 \department{inf} % Das Kürzel wird automatisch ersetzt und als Studienfach gewählt, siehe Liste der Kürzel im Dokument.
-\institute{Security Engineering}
-%\group{Arbeitsgruppe}
+\institute{CYSEC}
+\group{Security Engineering Group}
 
 \submissiondate{\today}
 \examdate{\today}
@@ -130,13 +130,23 @@
 
 \affidavit
 
-\tableofcontents
-
 
   \newpage
-  \chapter{Abstract}
+  \chapter*{Abstract}
 
-  In this thesis we analyse modern browsers regarding their behaviour of JavaScript code exection in background tabs. We show that the energy conserving methods of desktop browsers can easily be circumvented to do arbitrary calculations for unlimited time while the web site is not user visible. With these findings we trace popular websites to see if they use similar methods to execute uninterrupted in the background.
+  The world wide web today is not only used for serving static pages of information but it is also used as a platform for sophisticated web applications. These web applications may be opened for long durations during everyday computing activities. Other reasearch shows, that there are many attacks against the web browser executed from malicous web sites. Some of these attacks assume a long uninterrupted timespan for execution, for example cryptocurrency miners or exploits targeting hardware-based vulnerabilities. Therefore these attacks greatly benefit from being executed from web applications, which are opened for a long time on the victims computer. However, most web browsers limit the time a web site can execute code, when the web site is not in focus for energy conserving reasons.
+
+  In this thesis, we analyse modern browsers regarding their behaviour of JavaScript code exection in background tabs. We show that the energy conserving limits of background code execution of most browsers can easily be circumvented. We discuss and explain how the circumvention methods work and how browsers behaviour differ. For this research, we developed a framework for comparing and analysing different methods for background execution. This framework allows expansion for newly discovered methods as well as review of existing methods for new browser versions.
+
+  With the findings from our research, we performed a dynamic analysis of popular web sites to measure their code execution in the background and determine if they use limit-circumventing techniques for achieving longer background execution. The result of this analysis shows that all web sites circumventing the browser limits use one or more methods we explained.
+
+  To conclude, we discuss potential changes to browsers to prevent background code execution for web sites without explicit user consent.
+
+  
+  \newpage
+
+  \tableofcontents
+
 
   \newpage
   \chapter{Introduction}
@@ -453,7 +463,7 @@ window.postMessage = function () {
   
   
   \newpage
-  \chapter{Discussion}
+  \chapter{Discussion and conclusion}
 
   We showed that the methods described in the analysis section do indeed allow for longer background execution and that these methods are used by popular web sites. Most of the background execution stem from ad networks, which do dynamic bidding processes on the web site. 
 
@@ -483,7 +493,6 @@ window.postMessage = function () {
 
   Mobile browsers do not have a concept of pinned tabs, but Android and iOS support adding web sites to the home screen. When added to the home screen, a web app can hide the browser chrome for navigation and the address bar to behave more like a fully native app. We propose to give background execution permission to these web sites, which were added to the home screen by the user. This would be the equivalent of a pinned tab on desktop browsers for background execution behaviour.
   
-  \chapter{Conclusion}
 
   
   \newpage
