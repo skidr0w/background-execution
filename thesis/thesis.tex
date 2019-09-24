@@ -1,5 +1,4 @@
 \documentclass[
-	ngerman,
 	ruledheaders=section,%Ebene bis zu der die Überschriften mit Linien abgetrennt werden, vgl. DEMO-TUDaPub
 	class=report,% Basisdokumentenklasse. Wählt die Korrespondierende KOMA-Script Klasse
 	thesis={type=bachelor},% Dokumententyp Thesis, für Dissertationen siehe die Demo-Datei DEMO-TUDaPhd
@@ -22,7 +21,7 @@
 %%%%%%%%%%%%%%%%%%%
 %Sprachanpassung & Verbesserte Trennregeln
 %%%%%%%%%%%%%%%%%%%
-\usepackage[english, main=english]{babel}
+\usepackage[english,ngerman]{babel}
 \usepackage[autostyle]{csquotes}% Anführungszeichen vereinfacht
 \usepackage{microtype}
 
@@ -58,7 +57,6 @@
 \usepackage{subcaption}
 \usepackage{amsmath}
 \usepackage[justification=centering,labelfont=bf]{caption}
-\usepackage[a-1b]{pdfx}
 \usepackage{adjustbox}
 
 
@@ -117,8 +115,8 @@
 %Diese Felder erden untereinander auf der Titelseite platziert. 
 %\department ist eine notwendige Angabe, siehe auch dem Abschnitt `Abweichung von den Vorgaben für die Titelseite'
 \department{inf} % Das Kürzel wird automatisch ersetzt und als Studienfach gewählt, siehe Liste der Kürzel im Dokument.
-\institute{CYSEC}
-\group{Security Engineering Group}
+\institute{Security Engineering Group}
+%\group{Security Engineering Group}
 
 \submissiondate{\today}
 \examdate{\today}
@@ -128,12 +126,7 @@
 
 \maketitle
 
-\affidavit
-
-
-  \newpage
-  \chapter*{Abstract}
-
+\begin{abstract}
   The world wide web today is not only used for serving static pages of information but it is also used as a platform for sophisticated web applications. These web applications may be opened for long durations during everyday computing activities. Other reasearch shows, that there are many attacks against the web browser executed from malicous web sites. Some of these attacks assume a long uninterrupted timespan for execution, for example cryptocurrency miners or exploits targeting hardware-based vulnerabilities. Therefore these attacks greatly benefit from being executed from web applications, which are opened for a long time on the victims computer. However, most web browsers limit the time a web site can execute code, when the web site is not in focus for energy conserving reasons.
 
   In this thesis, we analyse modern browsers regarding their behaviour of JavaScript code exection in background tabs. We show that the energy conserving limits of background code execution of most browsers can easily be circumvented. We discuss and explain how the circumvention methods work and how browsers behaviour differ. For this research, we developed a framework for comparing and analysing different methods for background execution. This framework allows expansion for newly discovered methods as well as review of existing methods for new browser versions.
@@ -141,27 +134,33 @@
   With the findings from our research, we performed a dynamic analysis of popular web sites to measure their code execution in the background and determine if they use limit-circumventing techniques for achieving longer background execution. The result of this analysis shows that all web sites circumventing the browser limits use one or more methods we explained.
 
   To conclude, we discuss potential changes to browsers to prevent background code execution for web sites without explicit user consent.
+\end{abstract}
 
-  
-  \newpage
+\tableofcontents
 
-  \tableofcontents
+\newpage
+
+\chapter{Introduction}
+
+Web technology received rapid advances in the last years. Many websites not only deliver static information in form of text and images, but instead modern web sites implement complex logic by executing JavaScript code on the client. This allows web sites to build highly dynamic applications which compete with traditional software products. For many of the standard business applications like an e-mail client, a word processor or even a bitmap graphic manipulation software there exist alterantives \cite{gmail}, \cite{office365-online}, \cite{photopea}, which are developed using web technologies and can be accessed via a modern web browser.
+
+Some reasons for the rise of popularity of web applications are that the web platform is providing more powerful APIs every year and the performance of browsers is drastically increasing so that CPU intensive tasks are feasable to be implemented as web application. Developing a web application instead of traditional software has also many benefits for the developers and publishers of said software. Web applications do not need installation. They just require a modern web browser, which comes preinstalled with any common operating system or mobile device. Users always use the latest version, because it is not installed to the users hard drive, thus reducing support and maintanance cost. Visiting a web site to try out a piece of software is a much smaller hurdle to overcome then downloading, installing and running a piece of traditional software. These are some reasons which make the web a popular platform for development of new applications.
+
+The web browser is a fundamental application on most personal computing devices and web browser usage is ubiquitous in everyday computing activities, because many modern applications are implemented as web apps. Also, users often use their browser with many tabs open at once \cite{weinreich2008not}. As such, browser vendors are encouraged to conserve as much energy as possible to enable users on battery powered devices, such as mobile phones or notebooks which are not tethered to a power outlet, a longer usage time. For maximum energy efficiency, all tabs in the background should eventually be halted completely, and only woken up when the page is moved to the foreground again. Suspending all background tabs is the stated goal of browser vendors \cite{chrome-background-tabs-roadmap}, but this change in behaviours is not yet implemented due to missing alternative APIs enabling the major use cases, which require background execution. Web apps, which need regular CPU time are sites, which notify the user about new content such as a news site or a social network, a web application which plays audio or video, or a web video conference application. For the time being, browsers only \textit{limit how often} web sites can schedule new work when a web site is not in focus to not break existing sites which are performing background tasks.
+
+  Other research shows that
 
 
-  \newpage
-  \chapter{Introduction}
+  In this thesis we find out, if the throttling mechanisms employed by browser vendors can be circumvented, so that web sites which are not visible to the browser can gain code execution for arbitrary time. We compare the different throttling mechanisms between desktop and mobile browsers and we trace popular websites to see if the found cirumvention methods are actively used in the wild.
 
-  Web technology received rapid advances in the last years. Many websites not only deliver static information in form of text and images, but are complete highly dynamic applications which compete with traditional software products. For many of the standard business applications like an E-mail client, a word processor or even a bitmap graphic manipulation software there are alterantives\footnote{\url{https://www.google.com/gmail/about/}}\footnote{\url{https://products.office.com/en-us/free-office-online-for-the-web}}\footnote{\url{https://www.photopea.com/}}, which are developed using web technologies and used via a modern web browser. The web browser has grown from a renderer of static information to the operating system of web applications. Some reasons for the rise of these web applications are, that browsers are getting more capable every year and the JavaScript performance is increasing drastically so that these applications are possible in the first place. Developing a web application instead of traditional software has also many benefits for the developer of said software. Web apps don't need installation, just a modern web browser, which comes preinstalled with any common operating system and mobile device. Visiting a web site to try out a piece of software is a much smaller hurdle to overcome then downloading, installing and running a piece of software. These reasons make the web a popular platform for developing new applications.
 
   At the same time, the revenue model for many websites is advertising. Websites include third party JavaScript from ad networks, which display ads and track impressions. The included code can be controlled by the advertiser. For a malicous entity, it is therefore possible to include JavaScript on reputable websites just by paying for the ad impression. This method of distribution for malicous script is known as malvertising\cite{wiki:malvertising}.
 
-  The web browser is a fundamental application on most personal computing devices and is trusted by it's users. Because many modern applications are implemented as web apps, web browser usage is ubiquitous in the usage of computing devices. As such, many users leave the web browser open during the whole time they use their device, often times with many website tabs open. The browser vendors are encouraged to conserve as much energy as possible to enable users on battery powered devices, such as mobile phones or notebooks which are not tethered to a power outlet, a longer usage time. On the other side, the browser should not break web applications which require regular CPU time to function correctly. Web apps, which need regular CPU time are sites, which notify the user about new content such as a news site or a social network, a web application which plays audio or video, or a web video conference application. All modern browsers limit the amount of CPU time a tab in the background can use and how often web sites can schedule new work. For maximum energy efficiency, all tabs in the background should eventually be halted completely and only woken up, when the page is moved to the foreground again. This is also the goal of browser vendors\cite{chrome-background-tabs-roadmap}, but the execution of this goal is easy without breaking existing web applications or providing a workaround for some applications.
-
-  In this thesis we find out, if the throttling mechanisms employed by browser vendors can be circumvented, so that web sites which are not visible to the browser can gain code execution for arbitrary time. We compare the different throttling mechanisms between desktop and mobile browsers and we trace popular websites to see if the found cirumvention methods are actively used in the wild.
-  
   \section{Motivation}
 
-  The JavaScript language was designed as an extension to HTML and CSS in the early days of the world wide web, with the goal to enable user interaction with web pages. Although JavaScript is nowadays used for much more then just simple event handlers for user interactions, the basic principle of the web did not change: When a user visits a web site, the browser downloads all resources belonging to this web site, like HTML, images and also scripts. These scripts are run, to build up the complete website. When users visit a web page and do not disable JavaScript completly, they implicitly allow this web site to execute arbitrary code on their machine. This implicit trust is also a major design factor for HTML5 APIs. The goal of the HTML5 API designers is, to allow for new kind of applications, without allowing a web application too much control over the machine it is running on. Nevertheless there are numerous activities, which malicous entities could perform with access to a web site with high amount of daily visits.
+ 
+
+  Nevertheless there are numerous activities, which malicous entities could perform with access to a web site with high amount of daily visits.
 
   \begin{itemize}
   \item The attacker could inject a browser crypto-currency miner to convert electricity of the website visitors into crypto currency. The existance of crypto currencies such as Monero, which uses proof of work algorithm, which is inefficient to calculate on custom hardware, makes the browser a viable target for such mining. Existing implementations of Monero miners implemented in web assemlby are available for this attack.
@@ -169,9 +168,9 @@
   \item The computer of the visitor itself could be compromised by using exploits of the browser or the underlying system itself. Attacks which exploit hardware weaknesses such as Spectre\cite{Kocher2018spectre}, which could allow an attacker to read memory space of other browser tabs, could expose sensitive informations such as passwords or banking information of the uses. Rowhammer\cite{rowhammer} attacks could even persistently infect the users system. These exploits usually need quite some time to be successful and could benefit from constant background execution in a background browser tab.
   \end{itemize}
 
-  
 
-  \section{Related works}
+  \newpage
+  \chapter{Related works}
 
   \begin{itemize}
 
@@ -190,23 +189,27 @@
     
   \end{itemize}
 
+
+
+
   
   \newpage
   \chapter{Background}
 
-  To understand, how JavaScript handles tasks and concurrency, whe first have to understand how a JavaScript execution context is structured and how the event loop handles long running tasks.
+  The development of modern web applications is done with JavaScript code, which gets embedded in the resources of the web site and is executed by the browser. The JavaScript language was originally designed as an extension to HTML and CSS. The goal was to enable simple user interaction with web pages, like validation of user-entered form input. Although it is nowadays used for much more sophisticated web applications, the basic principle of the web did not change since: When a user visits a web site, the browser downloads all resources belonging to this web site, like HTML, images and also JavaScript code. These scripts are run, to build up the complete website. When users visit a web page and do not disable JavaScript completly, they implicitly allow this web site to execute code on their machine. In this chapter, we describe how the JavaScript execution context is structured and how JavaScript handles concurrency and long running tasks.
 
-  \section{The JavaScript execution context and the event loop}
+  \section{The JavaScript execution context}
 
-  A JavaScript execution context is organized into a task queue, a stack and a heap \cite{mdn-event-loop}.
+  A JavaScript execution context is organized into a task queue, an event loop, a stack and a heap \cite{mdn-event-loop}.
 
-  The task queue defines a list of tasks, which should be executed by the JavaScript runtime. A task consist of a callback function and optional arguments to this callback function. The JavaScript runtime implements an event loop, which processes the task queue. The event loop, waits for tasks to be added to the task queue. When the task queue is not empty, the event loop removes the first task from the queue and executes its corresponding callback function with the provided arguments. This is repeated until the task queue is empty again.
+  \begin{description}
+  \item[Task queue] The task queue defines a list of tasks, which should be executed by the JavaScript runtime. A task consist of a callback function and optional arguments to this callback function.
+  \item[Event loop] The JavaScript runtime implements an event loop, which processes the task queue. During the event loop, the runtime waits for tasks to be added to the task queue. When the task queue is not empty, the event loop removes the first task from the queue and executes its corresponding callback function with the provided arguments. This is repeated until the task queue is empty.
+  \item[Stack] The stack is comparable to a call stack in other programming languages like Java or C. When a callback function from the task queue is executed, it creates a frame on the stack. Each function call inside the callback function also creates a stack frame. When a function returns, its frame is removed from the stack. A task from the task queue is finished, when the stack is empty.
+  \item[Heap] The heap is a memory region for long living objects, which are not destroyed after the execution of a single task.
+  \end{description}
 
-  The stack is comparable to a call stack in other programming languages like Java or C. When a callback function from the task queue is executed, it creates a frame on the stack. Each function call inside the callback function also creates a stack frame. When a function returns, its frame is removed from the stack. A task from the task queue is finished, when the stack is empty.
-
-  The heap is a memory region for long living objects, which are not destroyed after the execution of a single task.
-
-  When a JavaScript task is running, it is guaranteed to not be interrupted until it is completed. This also insures, that every variable cannot be changed from outside during the execution of a task. This is in contrast to many other programming languages like Java or C, where another thread can mutate variables at any time. To guarantee this behaviour, the JavaScript runtime in the web browser has wait for task to finish before it can continue rendering the web page, because the JavaScript task has access to the browser internal state and DOM\footnote{The Document Object Model is the API for describing the representation of a web page. It describes the HTML element tree, styling and registered event handlers.}. Due to these properties JavaScript tasks should be as small as possible to ensure responsiveness of the browser \cite{chrome-rail-model}. If a JavaScript task takes a long time to complete (i.e. it is executing an infinite loop) most browser show a warning to the user that a script is slowing down the website. The user then has the option to kill the task or wait for the task to finish.
+  When a JavaScript task is running, it is guaranteed to not be interrupted until it is completed. This also insures, that every variable cannot be changed from outside during the execution of a task. This is in contrast to many other programming languages like Java or C, where another thread can mutate variables at any time. To guarantee this behaviour, the JavaScript runtime in the web browser has wait for task to finish before it can continue rendering the web page, because the JavaScript task has access to the browser internal state and Document Object Model (DOM).  The DOM describes the representation of a web page and provides an API for manipulation of the element tree and registration of event handlers.. Due to JavaScript code having access to these internal structures, tasks should be as small as possible to ensure responsiveness of the browser \cite{chrome-rail-model}. If a JavaScript task takes a long time to complete (i.e. it is executing an infinite loop) most browser show a warning to the user that a script is slowing down the website. The user then has the option to kill the task or wait for the task to finish.
 
   Tasks can be added to the task queue by registering event listeners for events, for example a onclick handler of a button. When this event occurs, the runtime then adds a new tasks to the task queue. Tasks can also be added by JavaScript code itself, for example by using a timer.
 
@@ -218,8 +221,8 @@
   
   \section{Web workers}
 
-  Web workers are a addition to the HTML5 API, to overcome some of the limitations, which were described before. Web workers create a new execution context, which is \textit{not tied} to the browser rendering. They were introduced to perform long running uninterruptable calculations, which would block the rendering process for too long, if they would be executed in the main browser context. They don't share variables or resources with the main JavaScript context. The worker context therefore does not have access to the DOM of the web page, because that would introduce shared memory between the worker and main context, which would invalidate the runtime guarantees of the JavaScript specification. Other resources, such as network requests, which are independent from the main context, are available to the worker context. The web worker and main thread context can communicate by passing messages to each other, which are handled by their respective event loops. This allows the result of a calculation which happened in the worker context, to be passed to the main context and then be made visible to the user by showing the result in the DOM
-  .
+  Web workers are a addition to the HTML5 API, to overcome some of the limitations, which were described before. Web workers create a new execution context, which is \textit{not tied} to the browser rendering. They were introduced to perform long running uninterruptable calculations, which would block the rendering process for too long, if they would be executed in the main browser context. They don't share variables or resources with the main JavaScript context. The worker context therefore does not have access to the DOM of the web page, because that would introduce shared memory between the worker and main context, which would invalidate the runtime guarantees of the JavaScript specification. Other resources, such as network requests, which are independent from the main context, are available to the worker context. The web worker and main thread context can communicate by passing messages to each other, which are handled by their respective event loops. This allows the result of a calculation which happened in the worker context, to be passed to the main context and then be made visible to the user by showing the result in the DOM.
+
 
   
   \newpage
@@ -276,12 +279,12 @@
   \textbf{TODO: add iOS and Android}
   
   \begin{figure}
-    \begin{subfigure}[t]{0.45\textwidth}
+    \begin{subfigure}[t]{0.5\textwidth}
       \includegraphics[width=\textwidth]{images/timer-50.pdf}
       \caption{50 ms task duration}
     \end{subfigure}
     \hfill
-    \begin{subfigure}[t]{0.45\textwidth}
+    \begin{subfigure}[t]{0.5\textwidth}
       \includegraphics[width=\textwidth]{images/timer-1000.pdf}
       \caption{1000 ms task duration}
     \end{subfigure}
@@ -301,12 +304,12 @@
   Safaris behaviours does not change, when a WebSocket connection is active.
 
   \begin{figure}
-    \begin{subfigure}[t]{0.45\textwidth}
+    \begin{subfigure}[t]{0.5\textwidth}
       \includegraphics[width=\textwidth]{images/websocket-50.pdf}
       \caption{50 ms task duration}
     \end{subfigure}
     \hfill
-    \begin{subfigure}[t]{0.45\textwidth}
+    \begin{subfigure}[t]{0.5\textwidth}
       \includegraphics[width=\textwidth]{images/websocket-1000.pdf}
       \caption{1000 ms task duration}
     \end{subfigure}
@@ -314,6 +317,7 @@
     \caption{CPU usage over time for continuously scheduled timer tasks during an open WebSocket connection}
     \label{fig:websocket}
   \end{figure}
+
 
 
   \section{\texttt{postMessage()} tasks}
@@ -498,7 +502,9 @@ window.postMessage = function () {
   \newpage
   \printbibliography[heading=bibnumbered]
 
-   
+
+  \affidavit
+
 
 \end{document}
 %%% Local Variables: 
