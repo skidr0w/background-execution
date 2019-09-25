@@ -17,11 +17,12 @@ const reportProgress = (current, total) => {
 
 const processFile = (inputFile) =>
   transform(
-    async (
-      [
-        id,
-        url,
-        err,
+    async ([id, url, err, ...rest], done) => {
+      if (err.length > 0) {
+        done(null, [id, url, err]);
+        return;
+      }
+      const [
         traceFile,
         worker,
         workerOrigin,
@@ -29,13 +30,7 @@ const processFile = (inputFile) =>
         webSocketOrigin,
         postMessageCount,
         postMessageOrigin,
-      ],
-      done,
-    ) => {
-      if (err.length > 0) {
-        done(null, [id, url, err]);
-        return;
-      }
+      ] = rest;
       try {
         const filepath = path.join(
           path.dirname(inputFile),
