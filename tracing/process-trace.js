@@ -89,7 +89,7 @@ const processFile = (inputFile) =>
 
 const doProcessing = async (inputFile, outputFile) => {
   fs.createReadStream(inputFile)
-    .pipe(parse())
+    .pipe(parse({ relax_column_count: true }))
     .pipe(processFile(inputFile))
     .pipe(
       stringify({
