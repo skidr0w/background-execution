@@ -1,47 +1,81 @@
 const program = require('commander');
 const fs = require('fs');
 const path = require('path');
-const stream = require('stream');
-const { promisify } = require('util');
 const { calculateScriptingScores } = require('./calculate-scripting-time');
-const readdirAsync = promisify(fs.readdir);
+const parse = require('csv-parse');
+const transform = require('stream-transform');
 const stringify = require('csv-stringify');
 const readline = require('readline');
 
+let progressCount = 0;
 const reportProgress = (current, total) => {
   process.stderr.write('\x1B7');
   readline.clearLine(process.stderr);
-  process.stderr.write(
-    `Completed ${current} of ${total}, ${Math.round((current / total) * 100)}%`,
-  );
+  process.stderr.write(`Completed ${progressCount++}`);
   process.stderr.write('\x1B8');
 };
 
-const doProcessing = async (inputDir, outputFile) => {
-  const files = await readdirAsync(inputDir);
-  const traceFiles = files.filter((file) => file.endsWith('.json'));
-  let i = 0;
-  const total = traceFiles.length;
-  const processedDataStream = new stream.Readable({
-    objectMode: true,
-    async read(size) {
-      if (i === total) {
-        this.push(null);
+const processFile = (inputFile) =>
+  transform(
+    async (
+      [
+        id,
+        url,
+        err,
+        traceFile,
+        worker,
+        workerOrigin,
+        webSocket,
+        webSocketOrigin,
+        postMessageCount,
+        postMessageOrigin,
+      ],
+      done,
+    ) => {
+      if (err.length > 0) {
+        done(null, [id, url, err]);
         return;
       }
-
-      const traceFile = traceFiles[i++];
       try {
-        const filePath = path.join(inputDir, traceFile);
-        const scriptingScores = await calculateScriptingScores(filePath);
-        this.push([
-          traceFile,
-          '',
+        const filepath = path.join(
+          path.dirname(inputFile),
+          path.basename(traceFile),
+        );
+        console.log('processing', filepath);
+        const scriptingScores = await calculateScriptingScores(filepath);
+        done(null, [
+          id,
+          url,
+          null,
           scriptingScores.global.recordingTime,
           scriptingScores.global.scriptingTime,
+          (scriptingScores.global.scriptingTime /
+            scriptingScores.global.recordingTime) *
+            100,
+          scriptingScores.background.recordingTime,
+          scriptingScores.background.scriptingTime,
+          scriptingScores.background
+            ? (scriptingScores.background.scriptingTime /
+                scriptingScores.background.recordingTime) *
+              100
+            : 0,
+          worker,
           scriptingScores.worker.scriptingTime,
+          (scriptingScores.worker.scriptingTime /
+            scriptingScores.global.recordingTime) *
+            100,
+          webSocket,
           scriptingScores.webSocket.recordingTime,
           scriptingScores.webSocket.scriptingTime,
+          scriptingScores.webSocket.recordingTime
+            ? (scriptingScores.webSocket.scriptingTime /
+                scriptingScores.webSocket.recordingTime) *
+              100
+            : 0,
+          (scriptingScores.webSocket.scriptingTime /
+            scriptingScores.global.recordingTime) *
+            100,
+          postMessageCount,
         ]);
       } catch (e) {
         console.log(
@@ -50,22 +84,51 @@ const doProcessing = async (inputDir, outputFile) => {
           e.message,
           e.stack,
         );
-        this.push([traceFile, e.message, NaN, NaN, NaN]);
+        done(null, [id, url, e.message]);
       } finally {
-        reportProgress(i, total);
+        reportProgress();
       }
     },
-  });
-  processedDataStream
-    .pipe(stringify())
-    .pipe(fs.createWriteStream(path.join(inputDir, outputFile)));
+    { parallel: 1 },
+  );
+
+const doProcessing = async (inputFile, outputFile) => {
+  fs.createReadStream(inputFile)
+    .pipe(parse())
+    .pipe(processFile(inputFile))
+    .pipe(
+      stringify({
+        header: true,
+        columns: [
+          'id',
+          'url',
+          'error',
+          'recordingTime',
+          'globalScriptingTime',
+          'globalScriptingScore',
+          'backgroundRecordingTime',
+          'backgroundScriptingTime',
+          'backgroundScriptingScore',
+          'worker',
+          'workerScriptingTime',
+          'workerScriptingScore',
+          'webSocket',
+          'webSocketRecordingTime',
+          'webSocketScriptingTime',
+          'webSocketScriptingScore',
+          'webSocketScriptingScoreGlobal',
+          'postMessageCount',
+        ],
+      }),
+    )
+    .pipe(fs.createWriteStream(path.join(path.dirname(inputFile), outputFile)));
 };
 
 program
-  .arguments('<input-dir>')
+  .arguments('<input-file>')
   .option('-o, --outfile <filename>', 'output filename', 'processed.csv')
-  .action((inputDir, options) => {
-    doProcessing(inputDir, options.outfile);
+  .action((inputFile, options) => {
+    doProcessing(inputFile, options.outfile);
   })
   .parse(process.argv);
 

@@ -7,8 +7,9 @@ const transform = require('stream-transform');
 const WEBSOCKET_CONNECTED_EVENT_NAME = 'WebSocketReceiveHandshakeResponse';
 const WEBSOCKET_DESTROYED_EVENT_NAME = 'WebSocketDestroy';
 const isPageVisibilityHiddenEvent = (event) =>
-  event.name === 'TimeStamp' &&
-  event.args.data.message === 'visibilitychange_hidden';
+  (event.name === 'TimeStamp' &&
+    event.args.data.message === 'visibilitychange_hidden') ||
+  (event.name === 'EventDispatch' && event.args.data.type === 'pagehide');
 
 const calculateScriptingScores = async (traceFilePath) => {
   const timeSlicesWithOpenWebSocket = [];
@@ -16,7 +17,7 @@ const calculateScriptingScores = async (traceFilePath) => {
   let webSocketStartedTs;
   let backgroundStartedTs;
   const tapWebSocketEvents = transform((event) => {
-    if (isPageVisibilityHiddenEvent(event)) {
+    if (isPageVisibilityHiddenEvent(event) && !backgroundStartedTs) {
       backgroundStartedTs = event.ts / 1000;
     } else if (event.name === WEBSOCKET_CONNECTED_EVENT_NAME) {
       if (openWebSockets.length === 0) {
