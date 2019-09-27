@@ -8,13 +8,14 @@ declare global {
   interface Window {
     AudioContext: any;
     webkitAudioContext: any;
+    myAudioContext: any;
   }
 }
 
 const measurement = new Measurement(
   () => {
     const AudioContext = window.AudioContext || window.webkitAudioContext;
-    let audioContext = new AudioContext();
+    window.myAudioContext = new AudioContext();
     let intervalId: number | null = null;
     return {
       start: (callback) => {
