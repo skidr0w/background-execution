@@ -42,6 +42,9 @@
 %\usepackage{longtable} % Mehrseitige Tabellen
 %\usepackage{xltabular} % Mehrseitige Tabellen mit anpassarer Breite
 \usepackage{booktabs}   % Verbesserte Möglichkeiten für Tabellenlayout über horizontale Linien
+\usepackage{makecell}
+\usepackage{multirow}
+\renewcommand\theadfont{\bfseries}
 
 %%%%%%%%%%%%%%%%%%%
 %Paketvorschläge Mathematik
@@ -155,9 +158,6 @@ The web browser is a fundamental application on most personal computing devices 
 
 
   At the same time, the revenue model for many websites is advertising. Websites include third party JavaScript from ad networks, which display ads and track impressions. The included code can be controlled by the advertiser. For a malicous entity, it is therefore possible to include JavaScript on reputable websites just by paying for the ad impression. This method of distribution for malicous script is known as malvertising\cite{wiki:malvertising}.
-
-  \section{Motivation}
-
  
 
   Nevertheless there are numerous activities, which malicous entities could perform with access to a web site with high amount of daily visits.
@@ -167,6 +167,10 @@ The web browser is a fundamental application on most personal computing devices 
   \item The browser could be used as a compute node in a botnet, which can be used for DDoS attacks or for cracking hashed passwords. Grossman et al.\cite{grossmann2013million} show that these attacks can be used with standard web technologies and not exploiting any weaknesses.
   \item The computer of the visitor itself could be compromised by using exploits of the browser or the underlying system itself. Attacks which exploit hardware weaknesses such as Spectre\cite{Kocher2018spectre}, which could allow an attacker to read memory space of other browser tabs, could expose sensitive informations such as passwords or banking information of the uses. Rowhammer\cite{rowhammer} attacks could even persistently infect the users system. These exploits usually need quite some time to be successful and could benefit from constant background execution in a background browser tab.
   \end{itemize}
+
+  \section{Goals}
+
+  \section{Agenda}
 
 
   \newpage
@@ -243,7 +247,7 @@ The web browser is a fundamental application on most personal computing devices 
 
   \begin{itemize}
   \item Google Chrome for Android 76
-  \item Firefox for Android
+  \item Firefox for Android 68
   \item iOS 12.4.1 Mobile Safari
   \end{itemize}
 
@@ -267,17 +271,17 @@ The web browser is a fundamental application on most personal computing devices 
 
   
   \section{Timer tasks}
+  \label{sec:timer-tasks}
 
-  The default method to schedule new tasks for execution is to use the function \texttt{setTimeout()} or \texttt{setInterval()} which are available on window or worker global scope. These methods take at least two arguments. The first is the function which should be scheduled as a task. The second argument is the time in milliseconds to wait before the task should be executed. As this is the most straighforward way to schedule tasks, this method might be the one which gets throttled the most. The WHATWG specification for timers \cite{whatwg-timers} even explicitly defines an optional waiting time which is user-agent defined to allow for optimization of power usage. Also, when \texttt{setTimeout()} calls are nested or \texttt{setInterval()} repeats the 5th time, the minimum waiting time is incresed to be 4ms.
+  The default method to schedule new tasks for execution is to use the function \texttt{setTimeout()} or \texttt{setInterval()} which are available on window or worker global scope. These methods take at least two arguments. The first is the function which should be scheduled as a task. The second argument is the time in milliseconds to wait before the task should be executed. As this is the most straighforward way to schedule tasks, this method might be the one which gets throttled the most. The WHATWG specification for timers \cite{whatwg-timers} even explicitly defines an optional waiting time which is user-agent defined to allow for optimization of power usage. Also, when \texttt{setTimeout()} calls are nested or \texttt{setInterval()} repeats the 5th time, the minimum waiting time is incresed to be 4ms. We used our measuring framework to determine the browser behaviours with background timer tasks. The results for desktop browsers are shown in figure \ref{fig:timer}.
 
-  Google Chrome throttles timers for a page, when it is in the background or not user visible \cite{chrome-background-tabs}. Since Version 11 timers are batched at most once a second. This batching helps in reducing the battery impact of the background page. Since Version 57 Google Chrome also uses a budget based timer throttling. Budget based timer throttling works by introducing a timer budget for every page in the background. When the web site is in the background for longer then 10 seconds, the budget is considered. Every scheduled timer task is only executed when the budget for this page is greater then zero. The runtime of the task is subtracted from the budget. The budget regenerates for 0.01 seconds per second. This budget based throttling has multiple implications for background pages. First, it allows for sudden bursts in computing time, when these burst are very infrequent, because the budget regenereates continously, and can be depleted in a very short amount. Background web pages which want to use continous computation time, are limited to an average of 1 \% of CPU usage over time, because the budget regenerates at a rate of 1/100th of a second per second. The real CPU usage usually is a little higher then 1 \% on average though and only approaches 1 \% the longer the site is in the background, because the budget can be overdrawn with a long lasting task at the end of the measurement.
+  Google Chrome throttles timers for a page, when it is in the background or not user visible. Since Version 11 timers are batched at most once a second \cite{chrome-background-tabs}. We observed and confirmed this behaviour with our measuring framework. The batching is made visible in figure \ref{fig:timer} by the short peaks. Timer batching or coalescing is used to reduce the number of times the CPU has to be woken up from low power mode. Most modern CPUs have a low power mode which consumes significant less energy than the high power mode. Switching modes is also costing energy. Therefore, it is better for energy efficiency to switch modes only when necessary which can be achieved by coalescing these timer tasks. Since Version 57 Google Chrome also uses a budget based timer throttling. Budget based timer throttling works by introducing a timer budget for every page in the background. When the web site is in the background for longer then 10 seconds, the budget is considered. Every scheduled timer task is only executed when the budget for this page is greater then zero. The runtime of the task is subtracted from the budget. The budget regenerates for 0.01 seconds per second \cite{chrome-background-tabs}. We also observed and confirmed the timer throttling with our framework, as shown in figure \ref{fig:timer}. For the 50 ms tasks, the budget was hight enough to run for an additional 12 seconds, before the budget was negative for the first time, whereas the 1000 ms tasks depleted the budget before the 10 second mark. This budget based throttling has multiple implications for background pages. First, it allows for sudden bursts in computing time, when these burst are very infrequent, because the budget regenereates continously, and can be depleted in a very short amount. Background web pages which want to use continous computation time, are limited to an average of 1 \% of CPU usage over time, because the budget regenerates at a rate of 1/100th of a second per second. The real CPU usage usually is a little higher then 1 \% on average though and only approaches 1 \% the longer the site is in the background, because the budget can be overdrawn with a long lasting task at the end of the measurement. Google Chrome for Android behaves the same as its desktop counterpart except that background tabs are only active for 5 minutes \cite{chrome-android-suspend}. After that, the tab is completly suspended and only woken up when the tab is in focus again.
 
-
-  Firefox employs similiar throttling mechanisms to the ones from Google Chrome \cite{mdn-page-visibility}, though the details of the Firefox implementation differ slightly. When a page is in the background, Firefox invokes timers at least one second after the last timer finished. This is in contrast to Googles throttling to invocations once per second. The difference is most visible, when the task duration is 1 sec, because with Googles throttling implementation, the next task fires immediatly, whereas Firefox waits an additional second, before the next task is scheduled. Another differences is, that in Firefox, the budget based timer throttling is used after a page is in the background for 30 seconds, instead of 10 seconds for Google Chrome. Also Firefox caps the page budget at a minimum of -150 ms and a maximum of 50 ms. That means, that Firefox does not allow large burst of tasks, because the budget never increases above 50 ms, but longer lasting tasks, do not overdraw the budget more then -150 ms. This behaviour favors tasks, which are longer then 150ms. For example a repeated task with a duration of 1000 ms only needs to wait for 15 seconds, before it is executed again in Firefox, whereas the same task would have to wait for 100 seconds in Google Chrome, before the budget is posivite again. Firefox also employs additional throttling to tracking scripts \cite{mdn-tracker-throttling}, which limit repeated invocations to known tracker scripts to at most once every 10 seconds.
+  Firefox employs similiar throttling mechanisms to the ones from Google Chrome \cite{mdn-page-visibility}. We observed that the details of the Firefox implementation differ slightly, though. When a page is in the background, Firefox invokes timers at least one second after the last timer finished. This is in contrast to Googles throttling to invocations once per second. The difference is most visible, when the task duration is 1 sec, because with Googles throttling implementation, the next task fires immediatly, whereas Firefox waits an additional second, before the next task is scheduled. This is also visible in figure \ref{fig:timer}. Firefoxs average CPU usage for 1000 ms tasks is shown with 50 \% before the budget throttling is activated. Another difference is that the budget based timer throttling is used after a page is in the background for 30 seconds instead of 10 seconds for Google Chrome. Additionally Firefox caps the page budget at a minimum of -150 ms and a maximum of 50 ms. That means that Firefox does not allow large burst of tasks, because the budget never increases above 50 ms. Longer lasting tasks do not overdraw the budget more then -150 ms. This behaviour favors tasks which are longer then 150ms. For example, a repeated task with a duration of 1000 ms only needs to wait for 15 seconds, before the budget is positive again in Firefox whereas the a task with the same duration would have to wait for 100 seconds in Google Chrome. Firefox also employs additional throttling to tracking scripts, which limit repeated invocations to known tracker scripts to at most once every 10 seconds \cite{mdn-tracker-throttling}. Firefox for Android behaves exactly like the desktop version. We could not detect or observe further energy optimizations in the mobile port of Firefox. 
 
   Safari's throttling behaviour is different then both Chrome's and Firefox's behaviour. Scheduled tasks in background pages get invoked by Safari in increasing intervals. This ensures, that the CPU usage for background pages decreases much more rapidly then the CPU usage of the same page in Chrome or Firefox. Safari also coalesces timer calls, to prevent periodic wake ups of the CPU for the invocation of timers. Instead multiple timers are invoked one after the other to then let the CPU move to a energy saving state.
 
-  \textbf{TODO: add iOS and Android}
+  
   
   \begin{figure}
     \begin{subfigure}[t]{0.5\textwidth}
@@ -290,19 +294,19 @@ The web browser is a fundamental application on most personal computing devices 
       \caption{1000 ms task duration}
     \end{subfigure}
 
-    \caption{CPU usage over time for continuously scheduled timer tasks}
+    \caption{CPU usage over time for continuously scheduled timer tasks in background tabs}
     \label{fig:timer}
   \end{figure}
 
   \section{Timer tasks with WebSocket / AudioContext}
 
-  Browser vendors try to strike a balance between throttling background pages as much as possible to conserve energy and keep the system more responsive and not breaking existing web applications. As backwards compatibility is an important factor, some browsers reduce their throttling, when they detect, that a web application might need more background processing time. The detection, if a web site needs more processing time is difficult though. Due to the dynamic nature of JavaScript, static analysis of web scripts is very difficult. Therefore browsers use a simple heuristic, to determine if their default throttling should be reduced.
+  Browser vendors try to strike a balance between throttling background pages as much as possible to conserve energy and keep the system more responsive and not breaking existing web applications. As backwards compatibility is an important factor, some browsers reduce their throttling, when they detect, that a web application might need more background processing time. The detection, if a web site needs more processing time is difficult though. Due to the dynamic nature of JavaScript, static analysis of web scripts is very difficult. Therefore browsers use a simple heuristic, to determine if their default throttling should be reduced. Again, we measured and observed the behaviour with our measurement framework. The results of desktop browsers are shown in figure \ref{fig:websocket}.
 
-  Chrome disables the budget-based throttling, when a web site has either an open WebSocket connection open or plays audible music. Playing silent music does not count as audible music playback though \cite{chrome-background-tabs}. This behaviour could be misused to get more processing time for JavaScript tasks. Playing a audbile sound file or opening a WebSocket connection work equalliy in preventing the budget-based throttling, but they differ hugely in how visible they are to the user of the web page. While playing audio is obviously audible and marks your tab with a speaker icon in the tab bar\footnote{This is a convenience feature for users to quickly find out, which tab is producing the sounds. This is especially useful, if you have many tabs open at the same time.}, opening a websocket connection is invisible to the user and requires no user confirmation. Additionally Chrome prevents automatic playback of audio unless the user has interacted with the site before.
+  Chrome disables the budget-based throttling, when a web site has either an open WebSocket connection open or plays audible music. Playing silent music does not count as audible music playback though \cite{chrome-background-tabs}. This behaviour could be misused to get more processing time for JavaScript tasks. Playing a audbile sound file or opening a WebSocket connection work equalliy in preventing the budget-based throttling, but they differ hugely in how visible they are to the user of the web page. Playing audio is obviously audible and marks your tab with a speaker icon in the tab bar. This is a convenience feature for users to quickly find out, which tab is producing the sounds and is especially useful, if you have many tabs open at the same time. However, Opening a websocket connection is invisible to the user and requires no user confirmation. Additionally Chrome prevents automatic playback of audio unless the user has interacted with the site before or the web site is explicitly whitelisted as a web site with a high media engagement index \cite{chrome-media-engagement-index}. This index is used by Chrome to determine, if a web site can allow audible media autoplay and is generated by the users browsing activity. On a new installation of Chrome, this list is prepopulated with over 1000 sites which Google determined to have a high average media engagement index of all Chrome users \cite{chrome-autoplay}. Chrome on Android behaves exactly the same as Chrome for desktop except for the 5 minute limit as described in section \ref{sec:timer-tasks}.
 
-  Firefox also disables the budget-based throttling when a open WebSocket connection is active. \textbf{TODO: Check for Audio Context.}
+  Firefox also disables the budget-based throttling when a open WebSocket connection is active, but the limitation of 1 task invocation per second stays intact. However, Firefox does completely disable all timer throttling when an AudioContext was opened on the web site since Firefox version 51 \cite{firefox-audiocontext-exemption}. We could observe and replicate this behaviour on Firefox for desktop as well as Firefox for Android, even when no audible audio was playing at all. Opening an AudioContext does not require special user permission and allowed us to saturate the main thread with an average CPU usage close to 100 \%. With this method, we can completely bypass all energy conserving methods on Firefox.
 
-  Safaris behaviours does not change, when a WebSocket connection is active.
+  Safaris behaviour does not change, when a WebSocket connection is active or an AudioContext was opened, neither for Safari for Mac nor for Mobile Safari for iOS.
 
   \begin{figure}
     \begin{subfigure}[t]{0.5\textwidth}
@@ -315,7 +319,7 @@ The web browser is a fundamental application on most personal computing devices 
       \caption{1000 ms task duration}
     \end{subfigure}
 
-    \caption{CPU usage over time for continuously scheduled timer tasks during an open WebSocket connection}
+    \caption{CPU usage over time for continuously scheduled timer tasks in background tabs with an open WebSocket connection}
     \label{fig:websocket}
   \end{figure}
 
@@ -360,37 +364,42 @@ The web browser is a fundamental application on most personal computing devices 
 
   In this section we analysed the behaviour of background tabs for desktop and mobile browsers. We saw that all browsers employ a timer throttling when the page is in the background. Chrome and Firefox use a budget-based timer throttling approach, whereas Safari increases the time between timer calls with every invocation. These timer throttlings can be circumvented by using the \texttt{postMessage()} API, by using web workers or by opening a websocket connection or an AudioContext. With all circumvention methods, we can saturate the main thread for indefinite amount of time in Chrome and Firefox. Only Safari detects continuous high CPU usage and reloads the page when it is using significant energy. Table \ref{tab:desktop-browser-background} summarizes the findings for desktops browsers.
 
-  
 
   \begin{table}
-    \begin{adjustbox}{center}
+    \centering
+    \begin{adjustbox}{angle=90}
 
-    \begin{tabular}{ p{3cm} | p{4,5cm} | p{4,5cm} | p{4,5cm} }
-                              & \multicolumn{1}{c|}{Google Chrome} & \multicolumn{1}{c|}{Mozilla Firefox} & \multicolumn{1}{c}{Apple Safari} \\
-      \hline
-      Timer tasks & Coalesced invocations at most once per second.
-               Budget-based throttling after 10 seconds in background.
-                              & Next invocation at least one second after last invocation.
-                                Capped budget-based throttling after 30 seconds in background.
-                              & Coalesced invocations. Time between invocations increases. \\
-      \hline
-      Timer tasks with open WebSocket / AudioContext
-                              & Coalesced invocations at most once per second. No budget-based throttling.
-                              & Next invocation at least one second after last invocation. No budget-based throttling.
-                              & Coalesced invocations. Time between invocations increases. \\
-      \hline
-      \texttt{postMessage()} tasks    & No throttling
-                              & No throttling
-                              & No throttling, but page gets reloaded when it is using significant energy \\
-      \hline
-      Web worker timer tasks  & No throttling
-                              & No throttling
-                              & No throttling, but page gets reloaded when it is using significant energy
-    \end{tabular}
-    \end{adjustbox}
-    \caption{Summary of desktop browser background tab behaviour}
-    \label{tab:desktop-browser-background}
-  \end{table}
+      \begin{tabularx}{\textheight}{ p{3cm} | X | X | X }
+        \toprule
+       \thead{Method}              & \thead{Chrome} & \thead{Firefox} & \thead{Safari}                   \\
+      \midrule
+      Timer tasks                  & Coalesced invocations at most once per second. Budget-based throttling after 10 seconds in background.
+                                   & Next invocation at least one second after last invocation. Capped budget-based throttling after 30 seconds in background.
+                                   & Coalesced invocations. Time between invocations increases.          \\
+      \midrule
+      Timer tasks with WebSocket
+                                   & Coalesced invocations at most once per second. No budget-based throttling.
+                                   & Next invocation at least one second after last invocation. No budget-based throttling.
+                                   & Coalesced invocations. Time between invocations increases.          \\
+      \midrule
+      Timer task with AudioContext
+                                   & Coalesced invocations at most once per second. Budget-based throttling after 10 seconds in background.
+                                   & No throttling
+                                   & Coalesced invocations. Time between invocations increases.          \\
+      \midrule
+      \texttt{postMessage()} tasks & No throttling
+                                   & No throttling
+                                   & No throttling, but page gets reloaded when using significant energy \\
+      \midrule
+      Web worker timer tasks       & No throttling
+                                   & No throttling
+                                   & No throttling, but page gets reloaded when using significant energy \\
+        \bottomrule
+    \end{tabularx}
+  \end{adjustbox}
+  \caption{Summary of desktop browser background tab behaviour}
+  \label{tab:desktop-browser-background}
+\end{table}
 
  
 
@@ -432,19 +441,21 @@ window.postMessage = function () {
 
   \begin{table}
     \begin{adjustbox}{center}
-      \begin{tabular}{l | r | c | c | r}
-        Web site           & Avg. CPU usage & WebSocket     & Worker        & \texttt{postMessage()} count \\
-        \hline
-        sports.ru          & 21.817 \%      & \FeatureTrue  & \FeatureFalse & 187                          \\
-        investing.com      & 10.816 \%      & \FeatureTrue  & \FeatureFalse & 7                            \\
-        nba.com            & 7.956 \%       & \FeatureFalse & \FeatureTrue  & 391                          \\
-        binance.com        & 7.184 \%       & \FeatureTrue  & \FeatureFalse & 0                            \\
-        yenisafak.com      & 6.014 \%       & \FeatureTrue  & \FeatureTrue  & 264                          \\
-        mundodeportivo.com & 5.422 \%       & \FeatureFalse & \FeatureFalse & 210                          \\
-        yeniakit.com.tr    & 5.389 \%       & \FeatureTrue  & \FeatureTrue  & 895                          \\
-        independent.co.uk  & 5.336 \%       & \FeatureFalse & \FeatureTrue  & 127                          \\
-        cinecalidad.to     & 5.314 \%       & \FeatureTrue  & \FeatureTrue  & 0                            \\
-        mobafire.com       & 5.199 \%       & \FeatureFalse & \FeatureFalse & 111                          \\
+      \begin{tabular}{l r c c r}
+        \toprule
+        \thead{Web site}   & \thead{Avg. CPU usage} & \thead{WebSocket} & \thead{Worker} & \thead{\texttt{postMessage()} count} \\
+        \midrule
+        sports.ru          & 21.817 \%              & \FeatureTrue      & \FeatureFalse  & 187                                  \\
+        investing.com      & 10.816 \%              & \FeatureTrue      & \FeatureFalse  & 7                                    \\
+        nba.com            & 7.956 \%               & \FeatureFalse     & \FeatureTrue   & 391                                  \\
+        binance.com        & 7.184 \%               & \FeatureTrue      & \FeatureFalse  & 0                                    \\
+        yenisafak.com      & 6.014 \%               & \FeatureTrue      & \FeatureTrue   & 264                                  \\
+        mundodeportivo.com & 5.422 \%               & \FeatureFalse     & \FeatureFalse  & 210                                  \\
+        yeniakit.com.tr    & 5.389 \%               & \FeatureTrue      & \FeatureTrue   & 895                                  \\
+        independent.co.uk  & 5.336 \%               & \FeatureFalse     & \FeatureTrue   & 127                                  \\
+        cinecalidad.to     & 5.314 \%               & \FeatureTrue      & \FeatureTrue   & 0                                    \\
+        mobafire.com       & 5.199 \%               & \FeatureFalse     & \FeatureFalse  & 111                                  \\
+        \bottomrule
       \end{tabular}
     \end{adjustbox}
     \caption{Top ten web sites with highest average CPU usage}
