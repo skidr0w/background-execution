@@ -182,7 +182,7 @@ The web browser is a fundamental application on most personal computing devices 
   \begin{description}
   \item[Chapter 2] describes the basic principles of web scripting and how the JavaScript language handles tasks and concurrency.
     
-  \item[Chapter 3] gives an overview over other research related to our field of study. We compare our research to prior work and highlight possible attacks targeting web browsers which assume some form of continous execution time.
+  \item[Chapter 3] gives an overview of other research related to our field of study. We compare our research to prior work and highlight possible attacks targeting web browsers which assume some form of continous execution time.
     
   \item[Chapter 4] describes methods for performing tasks in background tabs. We analyse how each browser behaves in regards to their throttling mechanisms to each method and how the different browser implementations differ.
     
@@ -199,7 +199,7 @@ The web browser is a fundamental application on most personal computing devices 
 
   Most desktop browsers also provide an alternative to run client applications on users machine via plugins such as Java Applets, Flash or Silverlight. However, these plugins are usually not supported by mobile browsers and the usage steadily declined since smartphones and mobile browsers became widely adopted. Today, JavaScript is the dominating technology for browser based applications \cite{browser-plugin-usage}.
 
-  JavaScript is a scripting language. That means, it is not compiled to native machine code but it requires an interpreter which parses and executes the JavaScript code at runtime. All major browsers include an JavaScript interpreter to correctly display modern web sites. The HTML5 specification describes how JavaScript engines have to interoperate with the browser and which APIs the browser must expose to JavaScript code which is embedded in web sites \cite{html5-specification}.
+  JavaScript is a scripting language. As such, it is not compiled to native machine code but it requires an interpreter which parses and executes the JavaScript code at runtime. All major browsers include an JavaScript interpreter to correctly display modern web sites. The HTML5 specification describes how JavaScript engines have to interoperate with the browser and which APIs the browser must expose to JavaScript code which is embedded in web sites \cite{html5-specification}.
 
   In the following sections, we describe how browsers run JavaScript code and how concurrency and long running tasks are handled in JavaScript.
 
@@ -228,9 +228,10 @@ The web browser is a fundamental application on most personal computing devices 
   
   \section{Web workers}
 
-  Web workers were an addition to the HTML5 API, to overcome some of the limitations, which were described before. Web workers create a new execution context, which is \textit{not tied} to the browser rendering. They were introduced to perform long running uninterruptable calculations, which would block the rendering process for too long, if they would be executed in the main browser context. They don't share variables or resources with the main JavaScript context. The worker context therefore does not have access to the DOM of the web page, because that would introduce shared memory between the worker and main context, which would invalidate the runtime guarantees of the JavaScript specification. Other resources, such as network requests, which are independent from the main context, are available to the worker context. The web worker and main thread context can communicate by passing messages to each other, which are handled by their respective event loops. This allows the result of a calculation which happened in the worker context, to be passed to the main context and then be made visible to the user by showing the result in the DOM.
+  Web workers were an addition to the HTML5 specification, to overcome some of the limitations, which were described before. Web workers create a new execution context, which is \textit{not tied} to the browser rendering. They were introduced to perform long running uninterruptable calculations, which would block the rendering process for too long, if they would be executed in the main browser context. They don not share variables or resources with the main JavaScript context. The worker context therefore does not have access to the DOM of the web page, because that would introduce shared memory between the worker and main context, which would invalidate the runtime guarantees of the JavaScript specification. Other resources, such as network requests, which are independent from the main context are available to the worker context. The web worker and main thread context can communicate by passing messages to each other which are handled by their respective event loops. This allows the result of a calculation which happened in the worker context to be passed to the main context and then be made visible to the user by showing the result in the DOM.
 
-    \textbf{TODO: dynamic analysis}
+  \section{Dynamic analysis of JavaScript code}
+  \textbf{TODO: dynamic analysis}
 
   
   \newpage
@@ -297,8 +298,12 @@ The web browser is a fundamental application on most personal computing devices 
 
   With this data we can then plot the computed CPU usage over time and compare different browsers for each scenario.
 
+
+  \section{Methods for background execution}
+
+  In this section we describe methods for schedulung code for execution in background tabs.
   
-  \section{Timer tasks}
+  \subsection{Timer tasks}
   \label{sec:timer-tasks}
 
   The default method to schedule new tasks for execution is to use the function \texttt{setTimeout()} or \texttt{setInterval()} which are available on window or worker global scope. These methods take at least two arguments. The first is the function which should be scheduled as a task. The second argument is the time in milliseconds to wait before the task should be executed. As this is the most straighforward way to schedule tasks, this method might be the one which gets throttled the most. The WHATWG specification for timers \cite{whatwg-timers} even explicitly defines an optional waiting time which is user-agent defined to allow for optimization of power usage. Also, when \texttt{setTimeout()} calls are nested or \texttt{setInterval()} repeats the 5th time, the minimum waiting time is incresed to be 4ms. We used our measuring framework to determine the browser behaviours with background timer tasks. The results for desktop browsers are shown in figure \ref{fig:timer}.
@@ -309,6 +314,7 @@ The web browser is a fundamental application on most personal computing devices 
 
   Safari's throttling behaviour is different then both Chrome's and Firefox's behaviour. Scheduled tasks in background pages get invoked by Safari in increasing intervals. This ensures, that the CPU usage for background pages decreases much more rapidly then the CPU usage of the same page in Chrome or Firefox. Safari also coalesces timer calls, to prevent periodic wake ups of the CPU for the invocation of timers. Instead, multiple timers are invoked consecutivly to let the CPU move to a energy saving state for a longer period.
 
+  \textbf{todo: mobile safari}
   
   
   \begin{figure}
@@ -326,7 +332,7 @@ The web browser is a fundamental application on most personal computing devices 
     \label{fig:timer}
   \end{figure}
 
-  \section{Timer tasks with WebSocket / AudioContext}
+  \subsection{Timer tasks with WebSocket / AudioContext}
 
   Browser vendors try to strike a balance between throttling background pages as much as possible to conserve energy and keep the system more responsive and not breaking existing web applications. As backwards compatibility is an important factor, some browsers reduce their throttling, when they detect, that a web application might need more background processing time. The detection, if a web site needs more processing time is difficult though. Due to the dynamic nature of JavaScript, static analysis of web scripts is very difficult. Therefore browsers use a simple heuristic, to determine if their default throttling should be reduced. Again, we measured and observed the behaviour with our measurement framework. The results of desktop browsers are shown in figure \ref{fig:websocket}.
 
@@ -353,17 +359,14 @@ The web browser is a fundamental application on most personal computing devices 
 
 
 
-  \section{\texttt{postMessage()} tasks}
+  \subsection{\texttt{postMessage()} tasks}
 
   Besides \texttt{setTimeout()} or \texttt{setInterval()} there exists another API for putting tasks in the JavaScript task queue. The function \texttt{postMessage()} available on the window and worker scope is available to allow for communication between windows of different origins or between main thread and worker thread \cite{mdn-postmessage}. As each window or worker has its own JavaScript execution context, the communication between these context must happen explicitly via \texttt{postMessage()} calls. The receiving context has to register for the \texttt{message} event on the window or worker object. A call to \texttt{postMessage()} with the receiver set to a window or worker who registered for the event, adds a new task to the task queue for this window. The scheduling of tasks, which are created with the before mentioned method, are not subject to the throttling as explained in the timer tasks section. This is also true for when a \texttt{postmessage()} call is sent and received from the same context. Tasks created with this method are also not subject to the minimum delay of 4 ms as timer tasks are \cite{zero-delay-timeouts}.
 
   All desktop browsers do not throttle the scheduling of task created via \texttt{postMessage()}. This allows a web site to fully utilize the CPU even when it is on the background. Chrome and Firefox allow to use this method to run indefinitely, whereas Safari detects that a web page is using significant energy and reloads the page after around 8 minutes in the background.
 
-  With this API not being throttled when a web site is in the background, a malicous entity could use this to their advantage. This shows, that the throttling mechanisms put in place for timer tasks are only considered for saving energy for well-behaving websites and not for protecting the users web sites which actively try to circumvent the throttling.
   
-
-  
-  \section{Web workers}
+  \subsection{Web workers}
 
   Web workers allow us to spawn a seperate execution context, which behaves different then the main execution context \cite{mdn-worker}. Worker contexts are also treated differently by browsers with regards to timer throttling in the background. Timers created with \texttt{setInterval()} or \texttt{setTimeout()} inside the worker context are not subject to the throttling when the corresponding web page moves to the background. This fact is used by the library worker-timers \cite{worker-timers}, which implements a broker and scheduler for timer tasks which are not throttled when the page moves to the background. The scheduler component runs inside the web worker, whereas the broker is run from the main execution context and dispatches messages when a timer was created or cleared via \texttt{postMessage()} to the worker context. The scheduler then sets an appropriate interval inside the worker context. When the timer inside the worker context fires, the scheduler posts a message to the main thread, which then calls the scheduled function. Through this indirection, the main thread can schedule timers with the worker-timers library, as if it was using the native window timers, but without the throttling behaviour, when the page is in the background. We created a test case with our measuring framework, how each browser behaves with this workaround.
   
@@ -372,7 +375,7 @@ The web browser is a fundamental application on most personal computing devices 
   Safari does also not throttle timers in web worker context for background tabs, but it will detect significant energy usage and may reload the page after constant time with high CPU usage. There is also a feature in the macOS operating system called AppNap, which might suspend the browser at whole, when Safari itself is not visible to the user \cite{osx-app-nap}. This feature kicks in, when the operating system decides, that the browser does not provide critical functionality at the moment and is also not visible. When the user is interacting with the Safari, but not the background tab itself then AppNap will not be invoked.
   
 
-  \section{Future research}
+  \section{Extensibility}
 
   We have limited our detailed analysis of background execution methods to these methods listed above, but the measuring framework we developed can be used for further investigation of other methods to achieve arbitrary background execution.
 
@@ -390,8 +393,11 @@ The web browser is a fundamental application on most personal computing devices 
   
   \section{Summary}
 
-  In this section we analysed the behaviour of background tabs for desktop and mobile browsers. We saw that all browsers employ a timer throttling when the page is in the background. Chrome and Firefox use a budget-based timer throttling approach, whereas Safari increases the time between timer calls with every invocation. These timer throttlings can be circumvented by using the \texttt{postMessage()} API, by using web workers or by opening a websocket connection or an AudioContext. With all circumvention methods, we can saturate the main thread for indefinite amount of time in Chrome and Firefox. Only Safari detects continuous high CPU usage and reloads the page when it is using significant energy. Table \ref{tab:desktop-browser-background} summarizes the findings for desktops browsers.
+  In this section we analysed the behaviour of background tabs for desktop and mobile browsers. We saw that all browsers employ a timer throttling when the page is in the background. Chrome and Firefox use a budget-based timer throttling approach, whereas Safari increases the time between timer calls with every invocation. The timer throttling of all browsers can be circumvented by using the \texttt{postMessage()} API or by using web workers. Additionally, Chrome's throttling can be disabled by opening a websocket connection and the throttling in Firefox can be disabled by opening an AudioContext. With all circumvention methods, we can saturate the main thread for indefinite amount of time in Chrome and Firefox. Only Safari detects continuous high CPU usage and reloads the page when it is using significant energy. Table \ref{tab:desktop-browser-background} summarizes the findings for desktops browsers.
 
+  These methods could be used by a malicous entity to perform long running background activities. This shows that the throttling mechanisms put in place by browser vendors can only be considered for conserving energy for well-behaving websites and not for protecting the users web sites which actively try to circumvent the throttling.
+
+  The behaviour of mobile browsers differ in some aspects to their desktop counterparts. Mobile Safari completely suspends background tabs as soon as the user switches to another tab. Chrome for Android limits the scheduling of tasks to a maximum of five minutes when the page is in the background. We could not detect a change of behaviour of Firefox for Android to the desktop version of Firefox.
 
   \begin{table}
     \centering
@@ -458,9 +464,9 @@ window.postMessage = function () {
   \section{Analysis of web site traces}
   \label{sec:trace-analysis}
 
-  The website trace together with the recoding of the hooked functions allows us to dig deep into what a single website is executing while it is in the background and which methods it used for scheduling the tasks, but to get a better picture of how all traced websites in general behave in the background we need to find a way to compare and aggregate the results of the traces. 
+  The trace file generated with Puppeteer consists of a list of events, a corresponding timestamp and the thread and process on which the event took place. With these information, we can reconstruct the timeline of tasks and the stack traces during the recording. To display the timeline, we can use the web profiler embedded in the Chrome DevTools. When we combine this information together with the recoding of the hooked functions during the recording, we can determine which tasks the web site was executing while it was in the background and which methods it used for scheduling the tasks.
 
-  To compare the result of two traces, it is beneficial to have a single score for each web site. We propose to use the average CPU usage triggered by scripting during the profiling to use as this score. The average CPU usage score can be calculated from the trace file generated by the web profiler. To calculate the CPU usage time for scripting we use the sum of the duration of all JavaScript tasks executed in the main thread as well as in all potentially spawned worker threads. We use the wall clock time for this measurement, because it is a suitable replacement for CPU time in a scenario where the machine on which the measurements are taken is not under any other load from other processes. Additionally this is the same method which Chrome uses for the budget-based throttling calculation \cite{chrome-background-tabs}. By dividing the summed duration of all tasks with the duration of our trace recording we get the average CPU usage score. A website which uses no JavaScript at all should therefore receive a score of 0, whereas a website which does run uninterupted calculations on the main thread should receive a score of 1. If a website uses multiple worker threads and the machine on which the measurements are taken has more then one physical CPU core, then the website could receive a score which is greater then 1, because all workers could be active at the same time. We also compute the average CPU usage score only considering web worker threads as well as the score for the main thread when a WebSocket connection was open. With these additional scores, we can see if the average shifts, when a circumvention method was used.
+  To get a better picture of how web sites in general behave in the background, we need to find a way to compare and aggregate the results of the all traces. To compare the result of two traces, it is beneficial to have a single score for each web site. We propose to use the average CPU usage triggered by scripting during the profiling to use as this score. The average CPU usage score can be calculated from the trace file generated by the web profiler. To calculate the CPU usage time for scripting we use the sum of the duration of all JavaScript tasks executed in the main thread as well as in all potentially spawned worker threads. We use the wall clock time for this measurement, because it is a suitable replacement for CPU time in a scenario where the machine on which the measurements are taken is not under any other load from other processes. Additionally this is the same method which Chrome uses for the budget-based throttling calculation \cite{chrome-background-tabs}. By dividing the summed duration of all tasks with the duration of our trace recording we get the average CPU usage score. A website which uses no JavaScript at all should therefore receive a score of 0, whereas a website which does run uninterupted calculations on the main thread should receive a score of 1. If a website uses multiple worker threads and the machine on which the measurements are taken has more then one physical CPU core, then the website could receive a score which is greater then 1, because all workers could be active at the same time. We also compute the average CPU usage score only considering web worker threads as well as the score for the main thread when a WebSocket connection was open. With these additional scores, we can see if the average shifts, when a circumvention method was used.
 
   The background throttling mechanism put in place by Google Chrome does limit the timers of websites based on a CPU time budget. This budget is currently set to regenerate at a rate of 0.01 seconds per second \cite{chrome-background-tabs}. That means that websites on average can only use 1 \% of CPU time for scripting. That would also equal a score of 1 \% in our proposed average CPU usage score. This limit gives a good estimation if websites try to overcome the background throttling mechanism of Chrome. Websites which score far greater then 1 \% presumably use one or more methods to prevent the throttling. However, this limit of 1 \% applies per execution context. If a web site includes multiple cross origin iframes, that is frames from a different domain name, than this iframe has its own execution context and therefore its own timer budget. The inclusion of cross origin frames is not quite common in popular web sites, because that is the preferred method of displaying ads. If a web site includes multiple such cross origin iframes, the combined average CPU usage can then far exceed the 1 \% limit put in place by the timer budget.
 
