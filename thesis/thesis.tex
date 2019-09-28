@@ -120,12 +120,13 @@
 \department{inf} % Das Kürzel wird automatisch ersetzt und als Studienfach gewählt, siehe Liste der Kürzel im Dokument.
 \institute{Security Engineering Group}
 %\group{Security Engineering Group}
+%\addTitleBoxLogo{SecEng_white}
 
 \submissiondate{\today}
 \examdate{\today}
 
-%	\tuprints{urn=1234,printid=12345}
-%	\dedication{Für alle, die \TeX{} nutzen.}
+%\tuprints{urn=1234,printid=12345}
+%\dedication{I dedicate this thesis to my deceased sister Kimberly whose support and encouragement enriched my life and inspired me to pursue and complete my studies.}
 
 \maketitle
 
@@ -193,12 +194,18 @@ The web browser is a fundamental application on most personal computing devices 
   
   \newpage
   \chapter{Background}
+  
+  The development of modern web applications is done with JavaScript code, which gets embedded in the resources of the web site and is executed by the browser. The JavaScript language was originally designed as an extension to HTML (Hypertext Markup Language) and CSS (Cascading Style Sheets) which form the foundation of the world wide web. The goal was to enable simple user interaction with web pages like validation of user-entered form input. Although it is nowadays used for much more sophisticated web applications, the basic principle of the web did not change since: When a user visits a web site, the browser downloads all resources belonging to this web site, like HTML, images and also JavaScript code. These scripts are run to build up the complete website. When a user visit a web page and did not disable JavaScript execution, they implicitly allow this web site to execute code on their machine.
 
-  The development of modern web applications is done with JavaScript code, which gets embedded in the resources of the web site and is executed by the browser. The JavaScript language was originally designed as an extension to HTML and CSS. The goal was to enable simple user interaction with web pages, like validation of user-entered form input. Although it is nowadays used for much more sophisticated web applications, the basic principle of the web did not change since: When a user visits a web site, the browser downloads all resources belonging to this web site, like HTML, images and also JavaScript code. These scripts are run, to build up the complete website. When users visit a web page and do not disable JavaScript completly, they implicitly allow this web site to execute code on their machine. In this chapter, we describe how the JavaScript execution context is structured and how JavaScript handles concurrency and long running tasks.
+  Most desktop browsers also provide an alternative to run client applications on users machine via plugins such as Java Applets, Flash or Silverlight. However, these plugins are usually not supported by mobile browsers and the usage steadily declined since smartphones and mobile browsers became widely adopted. Today, JavaScript is the dominating technology for browser based applications \cite{browser-plugin-usage}.
 
-  \textbf{TODO: describe web scripting and dynamic analysis}
+  JavaScript is a scripting language. That means, it is not compiled to native machine code but it requires an interpreter which parses and executes the JavaScript code at runtime. All major browsers include an JavaScript interpreter to correctly display modern web sites. The HTML5 specification describes how JavaScript engines have to interoperate with the browser and which APIs the browser must expose to JavaScript code which is embedded in web sites \cite{html5-specification}.
+
+  In the following sections, we describe how browsers run JavaScript code and how concurrency and long running tasks are handled in JavaScript.
 
   \section{The JavaScript execution context}
+
+  Each browser tab creates a browsing context which allows interfacing with the opened web site. JavaScript code embedded in the web site can either be executed in this browsing context or another context created by this web site, e.g. a web worker. In this thesis we define \textbf{execution context} to refer to both a browsing context and other contexts in which JavaScript code is executed in.
 
   A JavaScript execution context is organized into a task queue, an event loop, a stack and a heap \cite{mdn-event-loop}.
 
@@ -221,7 +228,9 @@ The web browser is a fundamental application on most personal computing devices 
   
   \section{Web workers}
 
-  Web workers are a addition to the HTML5 API, to overcome some of the limitations, which were described before. Web workers create a new execution context, which is \textit{not tied} to the browser rendering. They were introduced to perform long running uninterruptable calculations, which would block the rendering process for too long, if they would be executed in the main browser context. They don't share variables or resources with the main JavaScript context. The worker context therefore does not have access to the DOM of the web page, because that would introduce shared memory between the worker and main context, which would invalidate the runtime guarantees of the JavaScript specification. Other resources, such as network requests, which are independent from the main context, are available to the worker context. The web worker and main thread context can communicate by passing messages to each other, which are handled by their respective event loops. This allows the result of a calculation which happened in the worker context, to be passed to the main context and then be made visible to the user by showing the result in the DOM.
+  Web workers were an addition to the HTML5 API, to overcome some of the limitations, which were described before. Web workers create a new execution context, which is \textit{not tied} to the browser rendering. They were introduced to perform long running uninterruptable calculations, which would block the rendering process for too long, if they would be executed in the main browser context. They don't share variables or resources with the main JavaScript context. The worker context therefore does not have access to the DOM of the web page, because that would introduce shared memory between the worker and main context, which would invalidate the runtime guarantees of the JavaScript specification. Other resources, such as network requests, which are independent from the main context, are available to the worker context. The web worker and main thread context can communicate by passing messages to each other, which are handled by their respective event loops. This allows the result of a calculation which happened in the worker context, to be passed to the main context and then be made visible to the user by showing the result in the DOM.
+
+    \textbf{TODO: dynamic analysis}
 
   
   \newpage
