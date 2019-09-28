@@ -151,6 +151,8 @@ Some reasons for the rise of popularity of web applications are that the web pla
 
 The web browser is a fundamental application on most personal computing devices and web browser usage is ubiquitous in everyday computing activities, because many modern applications are implemented as web apps. Also, users often use their browser with many tabs open at once \cite{weinreich2008not}. As such, browser vendors are encouraged to conserve as much energy as possible to enable users on battery powered devices, such as mobile phones or notebooks which are not tethered to a power outlet, a longer usage time. For maximum energy efficiency, all tabs in the background should eventually be halted completely, and only woken up when the page is moved to the foreground again. Suspending all background tabs is the stated goal of browser vendors \cite{chrome-background-tabs-roadmap}, but this change in behaviours is not yet implemented due to missing alternative APIs enabling the major use cases, which require background execution. Web apps, which need regular CPU time are sites, which notify the user about new content such as a news site or a social network, a web application which plays audio or video, or a web video conference application. For the time being, browsers only \textit{limit how often} web sites can schedule new work when a web site is not in focus to not break existing sites which are performing background tasks.
 
+\textbf{TODO: restructure following paragraphs}
+
   Other research shows that
 
 
@@ -170,37 +172,31 @@ The web browser is a fundamental application on most personal computing devices 
 
   \section{Goals}
 
-  \section{Agenda}
+  The goals of this thesis are threefold: First, we want to analyse how browsers throttle tasks in background tabs. Second, we try to find methods to circumenvent the throttling mechanisms put in place. And third, we analyse popular web sites to confirm whether these methods are used to actively or inadvertently circumvent the browser throttling. However, we are not investigating what these web sites do in the background, merely if and how long background tasks are executed. With this research, we contribute the answer to the question whether the current energy-saving mechanisms implemented by browsers are suitable to protect users from malicious background activites on rogue web sites.
 
+  \section{Organization of this thesis}
 
-  \newpage
-  \chapter{Related works}
+  This thesis is organized into the following chapters:
 
-  \begin{itemize}
-
-  \item Papadopoulos et al.\autocite{papadopoulos2018truth} analyses the if Cryptocurrency miners are a viable alternative to traditional ad serving as a revenue possibility for web sites. They come to the conclusion, that cryptocurrency mining is more profitable when a user stays longer then 5.3 minutes on the website. When permanent execution of a crypto miners are possible in background tabs, then this time could easily be achieved.
-
-  \item Papadopoulus et al.\cite{papadopoulos2018master} show that browsers can be infected with malicous service workers to act as a puppet in a botnet. Their method for persistence requires an implementation of a draft proposel HTML5 API, which is not implemented in mainstream browsers yet. They focus in their research on service workers, which are independent of browser tabs, but poses other limitations. Our research instead focuses on web sites which are not user visible, i.e. in an inactive tab.   
-
+  \begin{description}
+  \item[Chapter 2] describes the basic principles of web scripting and how the JavaScript language handles tasks and concurrency.
     
-  \item Measurements of existing popular websites is done for privacy related as well as security releated research. Engelhardt et al.\cite{englehardt2016online} for example developed the OpenWPM framework for doing privacy measurements on million of websites. This framework is also used for ...
-
-    Security related analysis of existing webpages are done for example: to measure the use of third party script inclusions\cite{nikiforakis2012you}, to assess the security claims provided by third party security seal providers\cite{van2014clubbing} or to study malware distributed via ad networks\cite{zarras2014dark}.
-
-
-  \item Pan et al. analyse the feasability to use the browser of website visitors for offloading large computing tasks\cite{pan2015gray}. They termed this usage of distributed data processing gray computing, because it can be done without the users explicit consent, for example while the users are watching video streams. Their research focus is the performance of web workers and the cost effectiveness in comparison to cloud computing offerings. Our research complements the findings of Pan, because they could allow grey computing even when the user is consuming other web sites.
-
+  \item[Chapter 3] gives an overview over other research related to our field of study. We compare our research to prior work and highlight possible attacks targeting web browsers which assume some form of continous execution time.
     
-  \end{itemize}
-
-
-
+  \item[Chapter 4] describes methods for performing tasks in background tabs. We analyse how each browser behaves in regards to their throttling mechanisms to each method and how the different browser implementations differ.
+    
+  \item[Chapter 5] is about dynamic analysis of popular web sites. We explain how the automated tracing of popular web sites was conducted and we describe the results of this analysis.
+    
+  \item[Chapter 6] discusses the result of our research and proposes changes to the behaviours of browsers to protect users from unwanted activities of background tabs.
+  \end{description} 
 
   
   \newpage
   \chapter{Background}
 
   The development of modern web applications is done with JavaScript code, which gets embedded in the resources of the web site and is executed by the browser. The JavaScript language was originally designed as an extension to HTML and CSS. The goal was to enable simple user interaction with web pages, like validation of user-entered form input. Although it is nowadays used for much more sophisticated web applications, the basic principle of the web did not change since: When a user visits a web site, the browser downloads all resources belonging to this web site, like HTML, images and also JavaScript code. These scripts are run, to build up the complete website. When users visit a web page and do not disable JavaScript completly, they implicitly allow this web site to execute code on their machine. In this chapter, we describe how the JavaScript execution context is structured and how JavaScript handles concurrency and long running tasks.
+
+  \textbf{TODO: describe web scripting and dynamic analysis}
 
   \section{The JavaScript execution context}
 
@@ -226,6 +222,29 @@ The web browser is a fundamental application on most personal computing devices 
   \section{Web workers}
 
   Web workers are a addition to the HTML5 API, to overcome some of the limitations, which were described before. Web workers create a new execution context, which is \textit{not tied} to the browser rendering. They were introduced to perform long running uninterruptable calculations, which would block the rendering process for too long, if they would be executed in the main browser context. They don't share variables or resources with the main JavaScript context. The worker context therefore does not have access to the DOM of the web page, because that would introduce shared memory between the worker and main context, which would invalidate the runtime guarantees of the JavaScript specification. Other resources, such as network requests, which are independent from the main context, are available to the worker context. The web worker and main thread context can communicate by passing messages to each other, which are handled by their respective event loops. This allows the result of a calculation which happened in the worker context, to be passed to the main context and then be made visible to the user by showing the result in the DOM.
+
+  
+  \newpage
+  \chapter{Related work}
+
+  \textbf{TODO: restructure to formal text instead of bullet points}
+
+  \begin{itemize}
+
+  \item Papadopoulos et al.\autocite{papadopoulos2018truth} analyses the if Cryptocurrency miners are a viable alternative to traditional ad serving as a revenue possibility for web sites. They come to the conclusion, that cryptocurrency mining is more profitable when a user stays longer then 5.3 minutes on the website. When permanent execution of a crypto miners are possible in background tabs, then this time could easily be achieved.
+
+  \item Papadopoulus et al.\cite{papadopoulos2018master} show that browsers can be infected with malicous service workers to act as a puppet in a botnet. Their method for persistence requires an implementation of a draft proposel HTML5 API, which is not implemented in mainstream browsers yet. They focus in their research on service workers, which are independent of browser tabs, but poses other limitations. Our research instead focuses on web sites which are not user visible, i.e. in an inactive tab.   
+
+    
+  \item Measurements of existing popular websites is done for privacy related as well as security releated research. Engelhardt et al.\cite{englehardt2016online} for example developed the OpenWPM framework for doing privacy measurements on million of websites. This framework is also used for ...
+
+    Security related analysis of existing webpages are done for example: to measure the use of third party script inclusions\cite{nikiforakis2012you}, to assess the security claims provided by third party security seal providers\cite{van2014clubbing} or to study malware distributed via ad networks\cite{zarras2014dark}.
+
+
+  \item Pan et al. analyse the feasability to use the browser of website visitors for offloading large computing tasks\cite{pan2015gray}. They termed this usage of distributed data processing gray computing, because it can be done without the users explicit consent, for example while the users are watching video streams. Their research focus is the performance of web workers and the cost effectiveness in comparison to cloud computing offerings. Our research complements the findings of Pan, because they could allow grey computing even when the user is consuming other web sites.
+
+    
+  \end{itemize}
 
 
   
@@ -279,7 +298,7 @@ The web browser is a fundamental application on most personal computing devices 
 
   Firefox employs similiar throttling mechanisms to the ones from Google Chrome \cite{mdn-page-visibility}. We observed that the details of the Firefox implementation differ slightly, though. When a page is in the background, Firefox invokes timers at least one second after the last timer finished. This is in contrast to Googles throttling to invocations once per second. The difference is most visible, when the task duration is 1 sec, because with Googles throttling implementation, the next task fires immediatly, whereas Firefox waits an additional second, before the next task is scheduled. This is also visible in figure \ref{fig:timer}. Firefoxs average CPU usage for 1000 ms tasks is shown with 50 \% before the budget throttling is activated. Another difference is that the budget based timer throttling is used after a page is in the background for 30 seconds instead of 10 seconds for Google Chrome. Additionally Firefox caps the page budget at a minimum of -150 ms and a maximum of 50 ms. That means that Firefox does not allow large burst of tasks, because the budget never increases above 50 ms. Longer lasting tasks do not overdraw the budget more then -150 ms. This behaviour favors tasks which are longer then 150ms. For example, a repeated task with a duration of 1000 ms only needs to wait for 15 seconds, before the budget is positive again in Firefox whereas the a task with the same duration would have to wait for 100 seconds in Google Chrome. Firefox also employs additional throttling to tracking scripts, which limit repeated invocations to known tracker scripts to at most once every 10 seconds \cite{mdn-tracker-throttling}. Firefox for Android behaves exactly like the desktop version. We could not detect or observe further energy optimizations in the mobile port of Firefox. 
 
-  Safari's throttling behaviour is different then both Chrome's and Firefox's behaviour. Scheduled tasks in background pages get invoked by Safari in increasing intervals. This ensures, that the CPU usage for background pages decreases much more rapidly then the CPU usage of the same page in Chrome or Firefox. Safari also coalesces timer calls, to prevent periodic wake ups of the CPU for the invocation of timers. Instead multiple timers are invoked one after the other to then let the CPU move to a energy saving state.
+  Safari's throttling behaviour is different then both Chrome's and Firefox's behaviour. Scheduled tasks in background pages get invoked by Safari in increasing intervals. This ensures, that the CPU usage for background pages decreases much more rapidly then the CPU usage of the same page in Chrome or Firefox. Safari also coalesces timer calls, to prevent periodic wake ups of the CPU for the invocation of timers. Instead, multiple timers are invoked consecutivly to let the CPU move to a energy saving state for a longer period.
 
   
   
@@ -479,12 +498,7 @@ window.postMessage = function () {
   Some news related web sites reload the complete window after a certain amount of time to show the latest content of the home page when a user leaves the tab open for a long time. This is a low effort solution to always show the current content without the need for a dynamic content replacement scripts and can be easily integrated into existing content management systems. A side effect of reloading the page is that the background timer throttling is reset and the first 10 seconds after the reload are not subject to budget limits. As these news related web site often also include third party ad network scripts, these scripts also have to be executed again. The first seconds after the page was loaded are often times the most CPU intensive period during the whole tracing. We observed during our tracing analysis that web sites which reload themselves after a certain amount of time often exceed the timer budget limits by a large margin.
 
 
-  
-  biobiochile
-
-
-  
-  How much \% of web sites are above 1 \% of average CPU usage score.
+  \textbf{TODO} histogram, How much \% of web sites are above 1 \% of average CPU usage score.
 
   Only considiring web sites with workers/websockets, how many are above 1 \%
 
@@ -494,10 +508,7 @@ window.postMessage = function () {
 
   postmessage calls are heavily used in sites with high cpu score. they enable communication between iframes of different origins. used for web ad network scripts
 
-  a tracing of a malicous site
-
-  a tracing of a site a high score
-
+  biobiochile case study?
   
   
   
@@ -513,7 +524,7 @@ window.postMessage = function () {
   \begin{figure}
     \centering
     \includegraphics[width=0.5\textwidth]{images/microphone-permission.png}
-    \caption{Chrome website permission dialog}
+    \caption{Chrome permission dialog}
     \label{fig:chrome-permission-dialog}
   \end{figure}
 
