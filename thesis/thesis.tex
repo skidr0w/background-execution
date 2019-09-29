@@ -352,7 +352,7 @@ const measurement = new Measurement(function setup() {
 
   Firefox employs similiar throttling mechanisms to the ones from Google Chrome \cite{mdn-page-visibility}. Still, we observed that the details of the Firefox implementation differ slightly. When a page is in the background, Firefox invokes timers at least one second after the last timer finished. This is in contrast to Chrome's throttling to one invocation per second. The difference is most visible when the task duration is one second. With Chrome's throttling implementation the next task fires immediatly, whereas Firefox waits an additional second, before the next task is executed. This is also visible in figure \ref{fig:timer}. Firefoxs average CPU usage for 1000 ms tasks is shown with 50 \% before the budget throttling is activated. Another difference is that the budget based timer throttling is used after a page is in the background for 30 seconds instead of 10 seconds for Google Chrome. Additionally, Firefox caps the page budget at a minimum of -150 ms and a maximum of 50 ms. That means that Firefox does not allow bursts of smaller tasks with a combined duration larger than 50 ms, because the budget never increases above that limit. However, individual, longer lasting tasks do not overdraw the budget more then -150 ms. This behaviour favors tasks which are longer than 150 ms. For example, a repeated task with a duration of 1000 ms only needs to wait for 15 seconds, before the budget is positive again in Firefox, whereas a task with the same duration would have to wait for 100 seconds in  Chrome. Firefox also employs additional throttling to known tracker scripts, such as Google Analytics. Invocations of tasks of these tracker scripts are limited to at most once every 10 seconds \cite{mdn-tracker-throttling}. Firefox for Android behaves exactly like the desktop version. We could not detect or observe further energy optimizations in the mobile port of Firefox. 
 
-  Safari's throttling behaviour is different from that of the other two browsers. Scheduled tasks in background pages get invoked by Safari in exponentially increasing intervals. This ensures that the CPU usage for background pages decreases much more rapidly then the CPU usage of the same page in Chrome or Firefox. Safari also coalesces timer calls to prevent a lot of small periodic wake ups of the CPU. Instead of that, multiple timers are invoked consecutivly to let the CPU move to an energy saving state for a longer period. Mobile Safari completely disables the invocation of all timers as soon as the page moves to the background. It is the most restricting browser of all we assesed.
+  Safari's throttling behaviour is different from that of the other two browsers. Scheduled tasks in background pages get invoked by Safari in increasing intervals. This ensures that the CPU usage for background pages decreases much more rapidly then the CPU usage of the same page in Chrome or Firefox. Safari also coalesces timer calls to prevent a lot of small periodic wake ups of the CPU. Instead of that, multiple timers are invoked consecutivly to let the CPU move to an energy saving state for a longer period. We observed the increasing intervals in our measurements up to a limit of three minutes between invocations, but we could not determine the exact growth rate of the increases. We analysed the WebKit source code and determined that the increase grows exponential \cite{webkit-timer-increases}. Mobile Safari completely disables the invocation of all timers as soon as the page moves to the background. It is the most restricting browser of all we assesed.
   
   
   \begin{figure}
@@ -370,7 +370,7 @@ const measurement = new Measurement(function setup() {
     \label{fig:timer}
   \end{figure}
 
-  \subsection{Timer tasks with WebSocket / AudioContext}
+  \subsection{Timer tasks with active WebSocket / AudioContext}
 
   Browser vendors try to strike a balance between throttling background pages as much as possible to conserve energy and keep the foreground tab more responsive and not breaking existing web applications. As backwards compatibility is an important factor for users, some browsers reduce their throttling when they detect that a web application might need more background processing time. The detection that a web site needs more processing time is difficult though. Due to the dynamic nature of JavaScript, static analysis of JavaScript is very difficult. Therefore, browsers use simple heuristics, to determine if their default throttling should be reduced. One such heuristic is the presence of an open WebSocket connection \cite{mdn-websocket} or media playback with the AudioContext API \cite{mdn-audiocontext}. Again, we measured and observed the behaviour with our measurement framework. The results of desktop browsers are shown in figure \ref{fig:websocket}.
 
@@ -405,8 +405,6 @@ const measurement = new Measurement(function setup() {
 
   \textbf{todo: mobile}
 
-  %There is also a feature in the macOS operating system called AppNap, which might suspend the browser at whole, when Safari itself is not visible to the user \cite{osx-app-nap}. This feature kicks in, when the operating system decides, that the browser does not provide critical functionality at the moment and is also not visible. When the user is interacting with the Safari, but not the background tab itself then AppNap will not be invoked.
-
   
   \subsection{Web workers}
 
@@ -419,7 +417,7 @@ const measurement = new Measurement(function setup() {
   
   \section{Summary}
 
-  In this chapter we analysed the behaviour of background tabs for desktop and mobile browsers. We saw that all browsers employ a timer throttling when the page is in the background. Chrome and Firefox use a budget-based timer throttling approach, whereas Safari increases the time between timer calls with every invocation. The timer throttling of all browsers can be circumvented by using the \texttt{postMessage()} or by using web workers. Additionally, Chrome's budget-based limits can be disabled by creating a WebSocket connection and the all timer limits in Firefox can be disabled by opening an inaudible AudioContext. With all circumvention methods, we can saturate the main thread for indefinite amount of time in Chrome and Firefox. Only Safari detects continuous high CPU usage and reloads the page when it is using significant energy. Table \ref{tab:desktop-browser-background} summarizes the findings for desktops browsers.
+  In this chapter we analysed the behaviour of background tabs for desktop and mobile browsers. We saw that all browsers employ a timer throttling when the page is in the background. Chrome and Firefox use a budget-based timer throttling approach, whereas Safari increases the time between timer calls with every invocation. The timer throttling of all browsers can be circumvented by using the \texttt{postMessage()} or by using web workers. Additionally, Chrome's budget-based limits can be disabled by creating a WebSocket connection and the all timer limits in Firefox can be disabled by opening an inaudible AudioContext. With all circumvention methods, we can saturate the main thread for an infinite amount of time in Chrome and Firefox. Only Safari detects continuous high CPU usage and terminates the page when it is using significant energy. Table \ref{tab:desktop-browser-background} summarizes the findings for desktops browsers.
 
     The behaviours of Mobile Safari and Chrome for Android differ in some aspects to their desktop counterparts. Mobile Safari completely suspends background tabs as soon as the user switches to another tab. Chrome for Android limits the scheduling of tasks to a maximum of five minutes when the page is in the background. However, we could not detect a change of behaviour in regard to background exection in Firefox for Android compared to the desktop version of Firefox.
 
@@ -433,25 +431,25 @@ const measurement = new Measurement(function setup() {
       \midrule
       Timer tasks                  & Coalesced invocations at most once per second. Budget-based throttling after 10 seconds in background. Budget regenerates at 0.01 seconds per second.
                                    & Next invocation at least one second after last invocation. Capped budget-based throttling after 30 seconds in background. Budget regenerates at 0.01 seconds per second.
-                                   & Coalesced invocations. Time between invocations increases exponentially.          \\
+                                   & Coalesced invocations. Time between invocations increases exponentially up to a maximum of 3 minutes          \\
       \midrule
       Timer tasks with WebSocket
                                    & Coalesced invocations at most once per second. No budget-based throttling.
                                    & Next invocation at least one second after last invocation. No budget-based throttling.
-                                   & Coalesced invocations. Time between invocations increases exponentially.          \\
+                                   & Coalesced invocations. Time between invocations increases exponentially up to a maximum of 3 minutes.          \\
       \midrule
       Timer task with AudioContext
                                    & Coalesced invocations at most once per second. Budget-based throttling after 10 seconds in background.
                                    & No throttling
-                                   & Coalesced invocations. Time between invocations increases exponentially.          \\
+                                   & Coalesced invocations. Time between invocations increases exponentially up to a limit of 3 minutes.          \\
       \midrule
       \texttt{postMessage()} tasks & No throttling
                                    & No throttling
-                                   & No throttling, but page gets reloaded when using significant energy \\
+                                   & No throttling, but pages using significant energy are terminated \\
       \midrule
       Web worker timer tasks       & No throttling
                                    & No throttling
-                                   & No throttling, but page gets reloaded when using significant energy \\
+                                   & No throttling, but pages using significant energy are terminated \\
         \bottomrule
     \end{tabularx}
   \end{adjustbox}
@@ -459,23 +457,27 @@ const measurement = new Measurement(function setup() {
   \label{tab:desktop-browser-background}
 \end{table}
 
-  To the best of our knowledge, the methods described in section \ref{chap:methods} are all that are available to schedule tasks without user interaction. However, the measuring framework we developed can be used for further investigation when new HTML5 APIs allowing the scheduling of tasks are released. These potential methods can easily be assessed by the framework to compare them against existing methods.
+  To the best of our knowledge, the methods described in section \ref{chap:methods} are all that are available to schedule tasks without user interaction. However, the measuring framework can be used for further investigation of other possibilites to schedule tasks or analyse potential new HTML5 APIs when they become available. The measuring framework makes it easy to compare the results against existing methods.
 
   Additionally, Chrome and Firefox have adopted a rapid release cycle with new major releases of their product every couple weeks. The automation of our measuring framework allows for easy reproducability of our research to test whether our assessments are still valid for newer browser versions.
 
   Based on this analysis, we can conclude that current timer limitations of browser do not prevent continous background execution. With the methods described in this chapter, a malicious party could utilize background execution, as discussed in chapter \ref{chap:introduction}. The timer throttling mechanisms put in place by browser vendors can only be considered for conserving energy when visiting well-behaving web sites. They are not suitable for protecting users from web sites which actively try to circumvent the timer limits.
 
   \newpage
-  \chapter{Tracing of background execution on popular websites}
+  \chapter{Dynamic analysis of background execution on popular websites}
   \label{chap:tracing}
 
-  In the first part of our research we identified different methods to circumvent the browser timer throttling mechanisms for brackground tabs. With these findings in mind we can now trace popular websites to analyse if these circumenvtion methods are used in the wild. We used the first 1500 web sites included in the last free publication of the Alexa top 1 million site list\footnote{The list is available under \url{http://s3.amazonaws.com/alexa-static/top-1m.csv.zip}}. We decided to just trace the home page of each web site and no sub pages to limit the scope of this research. This is a known compromise of this tracing research, because many web applications only show a largly static landing page on the home page, while the script-heavy application itself is only available after login. On the other hand, it is not feasable to provide login credentials for a mass analysis of web sites, but it could be the topic of further research in this area. After we visit the home page of the web sites we measure the CPU usage caused by scripting after it was moved to a background tab. With the aggregated result of our tracing, we can determine if the browser throttling mechanisms are suiteable to limit CPU usage or if large number of websites use these methods to actively or inadvertently bypass the background throttling mechanisms of the browser. For this part of our research we focus only on desktop browsers, because the potential for misuse of desktop browsers is much larger. As the browser usage on mobile is limited to smaller timespans, usage of browsers on non-mobile devices is more ubiquitous as more and more applications are replaced with web apps. Often times the browser is open as long as the system itself, with many tabs open in the background during the whole time. The most used desktop browser in the year 2019 is Google Chrome with over 70 \% of market share according to \cite{statcounter-desktop-browser-market-share}. With this leading margin over other browsers, we decided to only trace web sites with Chrome.
-  
-  \section{Automated measuring of background execution}
+  In chapter \ref{chap:analysis} we identified different methods to circumvent the browser timer throttling for brackground tabs. With these findings in mind we trace popular websites to analyse how frequent these circumvention methods are used. We used a sample size of web sites included in the last free publication of the Alexa top 1 million site list\footnote{The list is available under \url{http://s3.amazonaws.com/alexa-static/top-1m.csv.zip}}. We decided to only trace the home page of each web site and no sub pages to limit the scope of this research. This is a deliberate tradeoff of this research. Many web applications only show a largly static landing page on the home page, while the script-heavy application itself is only available after login. On the other hand, it is not feasable to provide login credentials for a mass analysis of web sites, but it could be the topic of further research in this area. After we visit the home page of the web sites, we measure the CPU usage caused by scripting in the background. With the aggregated result of our tracing, we can determine if the browser throttling mechanisms are suiteable to limit background execution or if large number of websites use these methods to actively or inadvertently bypass the background throttling of the browser. For this part of our research we focus only on desktop browsers. The potential for misuse of desktop browsers is much larger, because mobile operating system suspend applications, and therefore also browsers, when they are not in active use app. However, on desktops operating systems the suspension of applications is not common practice. As far as we know, the macOS operating system is the only desktop operating system with app suspension features. It has a feature called "AppNap", which might suspend the browser process when the browser window is not visible to the user, for example when it is hidden behind another window \cite{osx-app-nap}. This feature activates, when the operating system decides, that the browser does not provide critical functionality at the moment.
 
-  To trace a web site in the background we perform the following steps: First we open a new Chrome instance and start the browsers internal web profiling. Then we open the website to trace and wait for the initial load to complete. After that we move this website to the background by opening a new tab, so that the browser throttling mechanisms are activated. We profile the page for a 15 minutes time period. After the 15 minutes are completed, we close the browser instance and save the website trace for analysis.
+  The most used desktop browser in the year 2019 is Chrome with over 70 \% of market share according to \cite{statcounter-desktop-browser-market-share}. With this leading margin over other browsers, we decided to only trace web sites with Chrome.
+  
+  \section{Automated tracing of background execution}
+
+  To analyse the background execution of a web site we perform the following steps: First, we open a new Chrome instance and start the browsers internal web profiling. Second, we open the web site and wait for the initial load to complete. Third, we move the web site to the background by opening a new empty browser tab to activate the browser throttling mechanisms. We profile the page for a 15 minutes time period. After the 15 minutes are completed, we close the browser instance and save the web site trace for later analysis.
+  
+  The generated trace file consists of a list of events, a corresponding timestamp and the thread and process on which the event took place. An example for an event which is traces is the beginning or the end of a JavaScript task, the receiving of a network response or user interaction events. With this information we can reconstruct the timeline of tasks including the stack traces and calculate the total duration of the background execution.
     
-  To automate the tracing we used Puppeteer \cite{pptr}. Puppeteer is a NodeJS library which uses the Chrome DevTools Protocol \cite{chrome-devtools-protocol} to control a Chrome. The DevTools Protocol is also used by Chrome DevTools which are bundled with Chrome and it allows to access the browser interals. With Puppeteer we can therefore use the same tracing capabilities of Chrome as the web profiler included in the Chrome DevTools. This allows us to evaluate our traces with the existing profiling tools of Chrome. The website trace includes information if the website is executing code and the duration of each JavaScript task that was executed while the web site was in the background.
+  To automate the tracing we used Puppeteer \cite{pptr}. Puppeteer is a library which uses the Chrome DevTools Protocol \cite{chrome-devtools-protocol} to control a Chrome instance. The DevTools Protocol is also used by the Chrome DevTools which are bundled with Chrome. It allows remote control of the browser and access to the browser interals.
 
   Another capability of puppeteer is to inject custom JavaScript code before a web site is rendered. Due to the dynamic nature of JavaScript, it is possible to override the implementation of every existing function. We use this feature in our injected script to hook the API for creating Web workers, opening a WebSocket and using \texttt{postMessage()} calls, to record their respective usage for our tracing. A simplified example how the hooking is performed looks like this:
 
@@ -487,19 +489,32 @@ window.postMessage = function () {
 }
 \end{lstlisting}
 
-  To hook a function, we first save the orginal function in a new variable in line 1. We then redefine the function to record the usage in line 3 and pass the arguments the original function in line 4. The \texttt{arguments} object is available in all non-arrow function and refers to the parameters passed to the function. With this hooking technique we can record the calls for APIs, which we are interested in, without the need to change the code of the web sites we trace.
+  To hook a function we first save the orginal function in a new variable in line 1. We then redefine the function to record the usage in line 3 and pass through the arguments to the original function in line 4. The \texttt{arguments} object is available in all non-arrow function and refers to the parameters passed to the function. With this hooking technique we can record the calls to APIs we are interested in without the need to change the code of the web sites.
 
   \section{Analysis of web site traces}
   \label{sec:trace-analysis}
 
-  The trace file generated with Puppeteer consists of a list of events, a corresponding timestamp and the thread and process on which the event took place. With these information, we can reconstruct the timeline of tasks and the stack traces during the recording. To display the timeline, we can use the web profiler embedded in the Chrome DevTools. When we combine this information together with the recoding of the hooked functions during the recording, we can determine which tasks the web site was executing while it was in the background and which methods it used for scheduling the tasks.
+  With the combination of he web site trace and the recodings of the hooked functions we can determine which tasks the web site was executing while it was in the background and which methods it used for scheduling the tasks. This allows for a detailed analysis of a single web site. However, to get a better picture of how a large number of web sites in general behave in the background, we need to find a way to compare and aggregate the results of the multiple traces.
 
-  To get a better picture of how web sites in general behave in the background, we need to find a way to compare and aggregate the results of the all traces. To compare the result of two traces, it is beneficial to have a single score for each web site. We propose to use the average CPU usage triggered by scripting during the profiling to use as this score. The average CPU usage score can be calculated from the trace file generated by the web profiler. To calculate the CPU usage time for scripting we use the sum of the duration of all JavaScript tasks executed in the main thread as well as in all potentially spawned worker threads. We use the wall clock time for this measurement, because it is a suitable replacement for CPU time in a scenario where the machine on which the measurements are taken is not under any other load from other processes. Additionally this is the same method which Chrome uses for the budget-based throttling calculation \cite{chrome-background-tabs}. By dividing the summed duration of all tasks with the duration of our trace recording we get the average CPU usage score. A website which uses no JavaScript at all should therefore receive a score of 0, whereas a website which does run uninterupted calculations on the main thread should receive a score of 1. If a website uses multiple worker threads and the machine on which the measurements are taken has more then one physical CPU core, then the website could receive a score which is greater then 1, because all workers could be active at the same time. We also compute the average CPU usage score only considering web worker threads as well as the score for the main thread when a WebSocket connection was open. With these additional scores, we can see if the average shifts, when a circumvention method was used.
+  To compare the result of two traces, it is beneficial to have a single score for each web site. We propose to use the average CPU usage triggered by scripting in the background to act as this score. The average CPU usage score can be calculated from the trace file generated by the web profiler. To calculate the CPU usage time for scripting we use the sum of all durations of all tasks executed in the main as well as in all potentially spawned worker contexts. We use the wall clock time for this measurement, because it is a suitable replacement for CPU time in a scenario where the recording machine is not under any other substential load from other processes. Additionally, this is also the same method used by Chrome for the budget-based throttling calculation \cite{chrome-background-tabs}. We can calculate the CPU usage score with the following formula:
 
-  The background throttling mechanism put in place by Google Chrome does limit the timers of websites based on a CPU time budget. This budget is currently set to regenerate at a rate of 0.01 seconds per second \cite{chrome-background-tabs}. That means that websites on average can only use 1 \% of CPU time for scripting. That would also equal a score of 1 \% in our proposed average CPU usage score. This limit gives a good estimation if websites try to overcome the background throttling mechanism of Chrome. Websites which score far greater then 1 \% presumably use one or more methods to prevent the throttling. However, this limit of 1 \% applies per execution context. If a web site includes multiple cross origin iframes, that is frames from a different domain name, than this iframe has its own execution context and therefore its own timer budget. The inclusion of cross origin frames is not quite common in popular web sites, because that is the preferred method of displaying ads. If a web site includes multiple such cross origin iframes, the combined average CPU usage can then far exceed the 1 \% limit put in place by the timer budget.
+  \begin{equation*}
+    \text{CPU}_{avg} = \frac{ \sum_{ c \in C } \sum_{ t \in T_c } r_t }{ t_r }
+  \end{equation*}
+  \begin{align*}
+    \text{where CPU}_{avg} &= \text{the average CPU usage score} \\
+    C &= \{ c \mid \text{main and worker execution contexts of the web site} \} \\
+    T_c &= \{ t \mid \text{tasks executed in context } c \} \\
+    r_t &= \text{runtime of task } t \\
+    t_r &= \text{ recording duration }
+  \end{align*}
+
+  A website which uses no JavaScript at all receives a score of 0, whereas a website which does run uninterupted calculations on the main thread should receive a score of 1. If a website uses multiple workers and the machine on which the measurements are taken has more than one physical CPU core, then the website could receive a score greater than 1, because all workers could be active at the same time.
+
+  As described in chapter \ref{chap:analysis}, the background throttling mechanism put in place by Chrome does limit the timers of websites based on a CPU time budget. This budget regenerates at a rate of 0.01 seconds per second \cite{chrome-background-tabs}. That means that websites on average can only use 1~\% of CPU time for scripting on the main execution context. That would consequently equal a score of 0.01 or 1~\% in our proposed average CPU usage score. This limit gives a good estimation if websites try to overcome the background throttling mechanism of Chrome. Websites which score greater than 1~\% presumably use one or more methods to prevent the throttling. However, this limit of 1~\% applies per main execution context. If a web site includes multiple cross origin iframes, i.e. frames including a web site from a different domain name, then this iframe has its own execution context and therefore its own timer budget. The inclusion of cross origin frames is quite common in popular web sites, because that is the preferred method of displaying ads. If a web site includes several such cross origin iframes, then the total average CPU usage of that web site can exceed the 1~\% limit put in place by the timer budget without using circumvention methods.
 
   
-  \section{Evaluation of tracing results}
+  \section{Evaluation of analysis results}
 
   \begin{table}
     \begin{adjustbox}{center}
@@ -541,6 +556,10 @@ window.postMessage = function () {
   Some news related web sites reload the complete window after a certain amount of time to show the latest content of the home page when a user leaves the tab open for a long time. This is a low effort solution to always show the current content without the need for a dynamic content replacement scripts and can be easily integrated into existing content management systems. A side effect of reloading the page is that the background timer throttling is reset and the first 10 seconds after the reload are not subject to budget limits. As these news related web site often also include third party ad network scripts, these scripts also have to be executed again. The first seconds after the page was loaded are often times the most CPU intensive period during the whole tracing. We observed during our tracing analysis that web sites which reload themselves after a certain amount of time often exceed the timer budget limits by a large margin.
 
 
+
+We also compute the average CPU usage score only considering web worker threads as well as the score for the main thread when a WebSocket connection was open. With these additional scores, we can see if the average shifts, when a circumvention method was used.
+
+  
   \textbf{TODO} histogram, How much \% of web sites are above 1 \% of average CPU usage score.
 
   Only considiring web sites with workers/websockets, how many are above 1 \%
