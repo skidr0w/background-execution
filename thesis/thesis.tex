@@ -183,13 +183,13 @@ The web browser is a fundamental application on most personal computing devices 
   \begin{description}
   \item[Chapter 2] describes the basic principles of web scripting and how the JavaScript language handles tasks and concurrency.
     
-  \item[Chapter 3] gives an overview of other research related to our field of study. We compare our research to prior work and highlight possible attacks targeting web browsers which assume some form of continous execution time.
+  \item[Chapter 3] gives an overview of other research related to our field of study. We compare our research to prior work and highlight possible attacks targeting browsers which assume some form of continous execution time.
     
   \item[Chapter 4] describes methods for performing tasks in background tabs. We analyse how each browser behaves in regard to their throttling mechanisms to each method and how various browser implementations differ.
     
-  \item[Chapter 5] is about dynamic analysis of popular web sites. We explain how the automated tracing of popular web sites was conducted and we describe the results of this analysis.
+  \item[Chapter 5] is about dynamic analysis of background execution of popular web sites. We explain how automated profiling of these web sites was conducted and we describe the results of the analysis.
     
-  \item[Chapter 6] discusses the result of our research and proposes changes to the behaviours of browsers to protect users from unwanted activities of background tabs.
+  \item[Chapter 6] summarizes the result of our research and discusses propsed changes to the behaviours of browsers to protect users from unwanted background execution.
   \end{description} 
 
   
@@ -244,12 +244,15 @@ function doNetworkRequest() {
 }
 \end{lstlisting}
   In the function \texttt{doNetworkRequest()} the call to \texttt{fetch()} performs a network request. The call to \texttt{fetch()} is an example of a long running function accepting a callback via the returned \texttt{then()} method. The \texttt{callback1()} function in line 3 is invoked with the response from the network call as a parameter when the response becomes available. The call to the method \texttt{text()} of the response object is also a callback accepting function. Each \texttt{function} declaration would be invoked as an indivual task by the runtime. The serializability guarantee holds for each function individually, but not the script as a whole.
+
+  In summary, a JavaScript tasks is the atomic unit of execution. The execution of tasks are serializable. Most web scripting is composed of many small tasks which are executed by the browser when an event happened or the result of another function becomes available.
   
   \section{Web workers}
   \label{sec:web-workers}
 
-  Web workers were an addition to the HTML5 specification to overcome the limitation of pure computing tasks blocking the rendering of the browser. Unlike functions executed in the main browser context, web workers create a new execution context which is \textit{not tied} to the browser rendering. They were introduced to perform long running unsplittable calculations, which would block the rendering process for too long, if they would be executed in the main browser context. They do not share variables or resources with the main JavaScript context. Therefore, the worker context does not have access to the DOM of the web page, because that would introduce shared memory between the worker and main context which would invalidate the runtime guarantees of the JavaScript specification. However, other resources, such as network requests that are independent from the main context, are available to the worker context. The web worker and main thread context can communicate by passing messages to each other which are handled by their respective event loops. This allows the result of a calculation happening in the worker context being passed to the main context and then being visualized to the user by appending the result to the DOM.
+  Web workers were an addition to the HTML5 specification to overcome the limitation of long running tasks blocking the rendering of the browser. Unlike tasks executed in the main browser context, web workers create a new execution context which is \textit{not tied} to the browser rendering. Long running, undividable tasks can be executed in the worker context without blocking the rendering. They do not share variables or resources with the main execution context. Therefore, the worker context does not have access to the DOM of the web page, because that would introduce shared memory between the worker and main context which would invalidate the runtime guarantees of the JavaScript specification. However, other resources, such as network requests that are independent from the main context, are available to the worker context. The web worker and main thread context can communicate by passing messages to each other which are handled by their respective event loops. This allows the result of a calculation happening in the worker context being passed to the main context and then being visualized to the user by appending the result to the DOM.
 
+  
   \section{Dynamic analysis of JavaScript code}
 
   
@@ -374,9 +377,9 @@ const measurement = new Measurement(function setup() {
 
   Browser vendors try to strike a balance between throttling background pages as much as possible to conserve energy and keep the foreground tab more responsive and not breaking existing web applications. As backwards compatibility is an important factor for users, some browsers reduce their throttling when they detect that a web application might need more background processing time. The detection that a web site needs more processing time is difficult though. Due to the dynamic nature of JavaScript, static analysis of JavaScript is very difficult. Therefore, browsers use simple heuristics, to determine if their default throttling should be reduced. One such heuristic is the presence of an open WebSocket connection \cite{mdn-websocket} or media playback with the AudioContext API \cite{mdn-audiocontext}. Again, we measured and observed the behaviour with our measurement framework. The results of desktop browsers are shown in figure \ref{fig:websocket}.
 
-  Chrome disables the budget-based throttling when a web site has either an active WebSocket connection open or plays audible sounds. Playing silent music does not count as audible music playback though \cite{chrome-background-tabs}. This behaviour could be misused to get more processing time for JavaScript tasks. Playing a audible sound or opening a WebSocket connection work equally in preventing the budget-based throttling, but they differ hugely in how noticeable they are to the user of the web page. Playing audio is obviously audible and marks your tab with a speaker icon in the tab bar. This is a convenience feature for users to quickly find out, which tab is producing the sounds. Additionally, playing audible sound without explicit user consent is frowned upon by many internet users. Actually, Chrome prevents automatic playback of audio unless the user has interacted with the site before or the web site is explicitly whitelisted as a web site with a high media engagement index \cite{chrome-media-engagement-index}. This index is used to determine if a web site can allow audible media autoplay and is generated by the user's browsing history. On a new installation of Chrome, this list is prepopulated with over 1000 sites which Google determined to have a high average media engagement index of all Chrome users \cite{chrome-autoplay}. However, opening a websocket connection is invisible to the user and requires no user confirmation. Chrome on Android behaves exactly the same as Chrome for desktop except for the 5 minute limit as described in section \ref{sec:timer-tasks}.
+  Chrome disables the budget-based throttling when a web site has either an active WebSocket connection open or plays audible sounds. Playing silent music does not count as audible music playback though \cite{chrome-background-tabs}. This behaviour could be misused to get more processing time for JavaScript tasks. Playing a audible sound or opening a WebSocket connection work equally in preventing the budget-based throttling, but they differ hugely in how noticeable they are to the user of the web page. Playing audio is obviously audible and marks your tab with a speaker icon in the tab bar. This is a convenience feature for users to quickly find out, which tab is producing the sounds. Additionally, playing audible sound without explicit user consent is frowned upon by many internet users. Actually, Chrome prevents automatic playback of audio unless the user has interacted with the site before or the web site is explicitly whitelisted as a web site with a high media engagement index \cite{chrome-media-engagement-index}. This index is used to determine if a web site can allow audible media autoplay and is generated by the user's browsing history. On a new installation of Chrome, this list is prepopulated with over 1000 sites which Google determined to have a high average media engagement index of all Chrome users \cite{chrome-autoplay}. However, opening a websocket connection is invisible to the user and requires no user confirmation. Chrome on Android behaves exactly the same as Chrome for desktop except for the five minute limit as described in section \ref{sec:timer-tasks}.
 
-  Firefox also disables the budget-based throttling when a WebSocket connection is active, but the limitation of one task invocation per second stays intact. However, Firefox does completely disable all timer limits when an AudioContext was created on the web site since Firefox version 51 \cite{firefox-audiocontext-exemption}. We could observe and replicate this behaviour on Firefox for desktop as well as Firefox for Android, even when no audible audio was playing at all. Creating an AudioContext does not require special user permission and allowed us to saturate the main thread with an average CPU usage close to 100 \%. With this method we can completely bypass all energy conserving methods on Firefox.
+  Firefox also disables the budget-based throttling when a WebSocket connection is active, but the limitation of one task invocation per second stays intact. However, Firefox does completely disable all timer limits when an AudioContext was created on the web site since Firefox version 51 \cite{firefox-audiocontext-exemption}. We could observe and replicate this behaviour on Firefox for desktop as well as Firefox for Android, even when no audible audio was playing at all. Creating an AudioContext does not require special user permission and allowed us to saturate the main thread with an average CPU usage close to 100~\%. With this method we can completely bypass all energy conserving methods on Firefox.
 
   Safaris behaviour does not change when a WebSocket connection is active or an inaudible AudioContext was created, neither for Safari for Mac nor for Mobile Safari for iOS.
 
@@ -401,18 +404,20 @@ const measurement = new Measurement(function setup() {
 
   Besides \texttt{setTimeout()} or \texttt{setInterval()} there exists another API for putting tasks into the task queue. The function \texttt{postMessage()} available on the main and worker context allows for communication between windows of different origins or between main and worker context \cite{mdn-postmessage}. As each window or worker has its own execution context, the communication between those must happen explicitly via \texttt{postMessage()} calls. The receiving context has to actively register for receiving these events. After that, a call to \texttt{postMessage()} with the receiver set to a window or worker that registered for the event adds a new task to the task queue of the receiving execution context. The execution of tasks, which are created with this method, are not subject to the throttling limits as explained in the timer tasks section \cite{zero-delay-timeouts}. This is also true when the \texttt{postmessage()} call is sent and received from the same execution context.
 
-  We analysed this method of scheduling tasks with our measurement framework and we observed that all desktop browsers do not throttle or otherwise limit the execution of task created via \texttt{postMessage()}. This allows a web site to fully utilize background execution. Chrome and Firefox allow this method to run indefinitely. However, we observed that Safari detects web pages using significant energy and terminates the complete page after around eight minutes in the background.
+  We analysed this method of scheduling tasks with our measurement framework and we observed that all desktop browsers do not throttle or otherwise limit the execution of task created via \texttt{postMessage()}. This allows a web site to fully utilize background execution. Chrome and Firefox allow this method to run indefinitely. However, we observed that Safari detects web pages using significant energy and terminates the complete page after around eight minutes in the background. Figure \ref{fig:significant-energy} shows how Safari is communicating the termination of a web site to the user. However, we could not use this method to achieve background execution in Mobile Safari, as it completely suspends the execution of tasks of background tabs.
 
-  \textbf{todo: mobile}
+   \begin{figure}
+      \includegraphics[width=\textwidth]{images/significant-energy.png}
+    \caption{Safari showing a warning about a web site after it was termined because of significant energy usage}
+    \label{fig:significant-energy}
+  \end{figure}
 
   
   \subsection{Web workers}
 
   As explained in section \ref{sec:web-workers}, web workers allow us to spawn a seperate execution context which behaves different than the main execution context \cite{mdn-worker}. Worker contexts are also treated differently by browsers with regard to background timer throttling. Timers created with \texttt{setInterval()} or \texttt{setTimeout()} inside the worker context are not subject to the throttling when the corresponding web page moves to the background. This fact is used by the library worker-timers \cite{worker-timers}, which implements a broker and scheduler for timer tasks in web workers for explicit use in background tabs. The scheduler component runs inside the web worker context, whereas the broker is run from the main execution context and dispatches messages when a timer was created or cleared via \texttt{postMessage()} calls to the worker context. The scheduler then creates an appropriate timer inside the worker context. When the timer fires, the scheduler posts a message to the main thread which then calls the scheduled function. Through this indirection the main thread can schedule timers with the worker-timers library as if it was using the native window timers, but without the background timer task limits. We created a test case with our measuring framework to find out how each browser behaves with this workaround.
   
-  Chrome and Firefox do not throttle timers in web worker context for background tabs at all. This means you can max out the main thread context with the worker-timers library for indefinite time.
-
-  Safari does also not throttle timers in web worker context for background tabs, but, again, it detects significant energy usage and terminates the page after around eight minutes constant high CPU usage. 
+  Chrome, Firefox and Firefox for Android do not throttle timers in web worker contexts in background tabs at all. This means you can max out the main thread context with the worker-timers library for indefinite time. Chrome for Android also doeas not throttle the worker timers, but it suspends background execution after five minutes. Safari does also not throttle timers in web worker context for background tabs, but, again, it detects significant energy usage and terminates the page after around eight minutes constant high CPU usage. Mobile Safari does suspend timers in worker context in background tabs, thus not allowing background execution with this method.
   
   
   \section{Summary}
@@ -520,18 +525,18 @@ window.postMessage = function () {
     \begin{adjustbox}{center}
       \begin{tabular}{l r c c r}
         \toprule
-        \thead{Web site}   & \thead{Avg. CPU usage} & \thead{WebSocket} & \thead{Worker} & \thead{\texttt{postMessage()} count} \\
+        \thead{Web site}  & \thead{Avg. CPU usage} & \thead{WebSocket} & \thead{Worker} & \thead{\texttt{postMessage()} count} \\
         \midrule
-        sports.ru          & 21.817 \%              & \FeatureTrue      & \FeatureFalse  & 187                                  \\
-        investing.com      & 10.816 \%              & \FeatureTrue      & \FeatureFalse  & 7                                    \\
-        nba.com            & 7.956 \%               & \FeatureFalse     & \FeatureTrue   & 391                                  \\
-        binance.com        & 7.184 \%               & \FeatureTrue      & \FeatureFalse  & 0                                    \\
-        yenisafak.com      & 6.014 \%               & \FeatureTrue      & \FeatureTrue   & 264                                  \\
-        mundodeportivo.com & 5.422 \%               & \FeatureFalse     & \FeatureFalse  & 210                                  \\
-        yeniakit.com.tr    & 5.389 \%               & \FeatureTrue      & \FeatureTrue   & 895                                  \\
-        independent.co.uk  & 5.336 \%               & \FeatureFalse     & \FeatureTrue   & 127                                  \\
-        cinecalidad.to     & 5.314 \%               & \FeatureTrue      & \FeatureTrue   & 0                                    \\
-        mobafire.com       & 5.199 \%               & \FeatureFalse     & \FeatureFalse  & 111                                  \\
+        sports.ru         & 11.277 \%              & \FeatureTrue      & \FeatureFalse  & 74                                   \\
+        reverso.net       & 6.034 \%               & \FeatureTrue      & \FeatureTrue   & 866                                  \\
+        yenisafak.com     & 5.475 \%               & \FeatureFalse     & \FeatureTrue   & 306                                  \\
+        cinecalidad.to    & 5.198 \%               & \FeatureTrue      & \FeatureTrue   & 0                                    \\
+        independent.co.uk & 4.472 \%               & \FeatureFalse     & \FeatureTrue   & 244                                  \\
+        mobafire.com      & 4.165 \%               & \FeatureFalse     & \FeatureFalse  & 81                                   \\
+        investing.com     & 3.910 \%               & \FeatureTrue      & \FeatureFalse  & 179                                  \\
+        yeniakit.com.tr   & 3.586 \%               & \FeatureTrue      & \FeatureFalse  & 713                                  \\
+        libero.it         & 3.184 \%               & \FeatureFalse     & \FeatureTrue   & 103                                  \\
+        indianexpress.com & 3.181 \%               & \FeatureFalse     & \FeatureTrue   & 426                                  \\
         \bottomrule
       \end{tabular}
     \end{adjustbox}
@@ -539,29 +544,31 @@ window.postMessage = function () {
     \label{tab:top-ten-cpu-usage}
   \end{table}
 
+
+
+  With the automated tracing script we measured the background activity from 1576 web sites. The ten web sites with the most background execution are listed in table \ref{tab:top-ten-cpu-usage} together with the detected limit-circumventing methods. Of all surveyed web sites 14~\% received an average CPU score greater than 1~\%. Of these web sites 50~\% use at least one circumvention method. We attribute the background execution of the remaining 50~\% to a high amount of cross origin iframes. If we only consider web sites with a score greater then 2~\%, then 79~\% of these web sites use a method described in chapter \ref{chap:analysis}.
+
+  The distribution of the CPU usage score from all analysed web sites is shown in figure \ref{fig:distribution-cpu-usage}. Each bin corresponds spans a range of 0.002 or 0.2~\% CPU usage score points. If we only consider web sites using at least one circumvention method during their background execution, we can see a slight shift of the average CPU usage score distribution. This shows that on average web sites using these methods utilize more background execution. 
+
+
   \begin{figure}
-    \centering
-    
-    \caption{Distribution of average CPU usage in background}
+    \begin{subfigure}[t]{0.5\textwidth}
+      \includegraphics[width=\textwidth]{images/histogram-global.pdf}
+      \caption{All web sites}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.5\textwidth}
+      \includegraphics[width=\textwidth]{images/histogram-method.pdf}
+      \caption{Only web sites using a circumvention method}
+    \end{subfigure}
+
+    \caption{Distribution of average CPU usage}
     \label{fig:distribution-cpu-usage}
   \end{figure}
-
-  With the automated tracing script we measured the background activity from 1558 web sites. The ten web sites with the most background execution are listed in table \ref{tab:top-ten-cpu-usage} together with the detected limit-circumventing methods.
-
-  The distribution of the CPU usage score from all analysed web sites is shown in figure \ref{fig:distribution-cpu-usage}. Each bin corresponds spans a range of 0.005 or 0.5~\% CPU usage score points. If we only consider web sites using at least one circumvention method during their background execution, we can clearly see a shift of the average CPU usage score. This shows that on average web sites using these methods utulize more background execution.
-
-  We manually analysed a random sample set of web sites with background execution higher than 1~\% by dissecting the corresponding trace file in the Chrome profiler. We discovered that the vast majority of background execution is attributable to advertisement and tracker scripts. We observed two main activities which are done in the background by these scripts. First, they report the user activity to their tracking server. Second, they rotate the ads displayed in the web site to record multiple ad views during one page view. Both of these activites cause several network requests which further impact the energy usage of the web site.
+  
+  We manually analysed a random sample set of web sites with background execution higher than 2~\% by dissecting the corresponding trace file in the Chrome profiler. We discovered that the vast majority of background execution is attributable to advertisement and tracker scripts. We observed two main activities which are done in the background by these scripts. First, they report the user activity to their tracking server. Second, they rotate the ads displayed in the web site to record multiple ad views during one page view. Both of these activites cause several network requests which further impact the energy usage of the web site. Additionally, the tracker scripts communicate in regular intervals with the iframes in which the ads are displayed. This communication happens via \texttt{postMessage()} calls which, as we now know, is not throttled by browsers.
   
   Some news related web sites reload the complete window after a certain amount of time to show the latest content of the home page when a user leaves the tab open for a long time. This is a low effort solution to always show the current content without the need for dynamic content replacement scripts and can be easily integrated into existing content management systems. A side effect of reloading the page is that the background timer throttling is reset and the first ten seconds after the page reload are not subject to budget limits again. As these news related web site often also include third party ad network scripts, these scripts also have to be executed again. The first seconds after the page was loaded often is the most CPU intensive period during the whole runtime of the web site. During our analysis we observed that web sites reloading themselves after a certain amount of time often exceed the timer budget limits.
-
-  
-
-  Only considiring web sites with workers/websockets, how many are above 1 \%
-
-
-  explain that some tracker networks try to update as fast as they can, even static sites which embed ads.
-
-  postmessage calls are heavily used in sites with high cpu score. they enable communication between iframes of different origins. used for web ad network scripts
   
   
   
