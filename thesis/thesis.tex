@@ -131,11 +131,11 @@
 \maketitle
 
 \begin{abstract}
-  The world wide web today is not only used for serving static pages of information but it is also used as a platform for sophisticated web applications. These web applications may be left opened for long durations during everyday computing activities. Other reasearch shows that there are many attacks against the web browser executed from malicous web sites. Some of these attacks assume a long uninterrupted timespan for execution, for example cryptocurrency miners or exploits targeting hardware-based vulnerabilities. Therefore, these attacks greatly benefit from being executed from web applications which are left opened for a long time on the victims computer. However, most web browsers limit the time a web site can execute code, when the web site is not in focus for energy conserving reasons.
+  The world wide web today is not only used for serving static pages of information but it is also used as a platform for sophisticated web applications. These web applications may be left opened for long durations during everyday computing activities. Other reasearch shows that there are many attacks against the web browser executed from malicous web sites. Some of these attacks assume a long uninterrupted timespan for execution, for example cryptocurrency miners or exploits targeting hardware-based vulnerabilities. Therefore, these attacks greatly benefit from being executed from web applications which are left opened for a long time on the victims computer. However, most web browsers limit the time a web site can execute code, when the web site is not in focus for energy conserving reasons. Hence we try to answer the question whether the background execution limitations prevent those attacks.
 
   In this thesis we analyse modern browsers regarding their behaviour of JavaScript code execution in background tabs. We show that the energy conserving limits of background code execution of most browsers can easily be circumvented. We discuss and explain how the circumvention methods work and how browsers behaviour differ. For this research we developed a framework for comparing and analysing different methods for background execution. This framework allows expansion for newly discovered methods as well as review of existing methods for newer browser versions.
 
-  With the findings from our research, we performed a dynamic analysis of popular web sites to measure their code execution in the background and determine if they use the limit-circumventing techniques we identified. The result of this analysis shows that all web sites circumventing the browser limits use one or more methods we explained.
+  With the findings from our research, we performed a dynamic analysis of popular web sites to measure their code execution in the background and determine if they use the limit-circumventing techniques we identified. The result of this analysis shows that some web sites do unnecessary circumvent the browser limits by one or more methods we explained.
 
   To conclude, we discuss potential changes to browsers to prevent background code execution for web sites without explicit user consent.
 \end{abstract}
@@ -153,28 +153,13 @@ Some reasons for the rise of popularity of web applications are that the web pla
 
 The web browser is a fundamental application on most personal computing devices and web browser usage is ubiquitous in everyday computing activities, because many modern applications are implemented as web apps. Also, users often use a browser with many tabs open at once \cite{weinreich2008not}. As such, browser vendors are encouraged to conserve as much energy as possible to enable users on battery powered devices, such as mobile phones or notebooks which are not tethered to a power outlet, a longer usage time. For maximum energy efficiency, all tabs in the background should eventually be halted completely, and only woken up when the page is moved to the foreground again. Suspending all background tabs is the stated goal of browser vendors \cite{chrome-background-tabs-roadmap}. However, this change in behaviour is not yet implemented due to missing alternative APIs enabling the major use cases, which require background execution. Web apps, which need regular CPU time are sites, which notify the user about new content such as a news site or a social network, a web application which plays audio or video, or a web video conference application. For the time being, browsers only \textit{limit how often} web sites can schedule new work when a web site is not in focus to not break existing sites which are performing background tasks.
 
-\textbf{TODO: restructure following paragraphs}
+Other research shows that there are attacks against the web browser, which assume or benefit from some form of background execution. When a malicious entity gains script execution on a popular web site it could perform several attacks. Consider a cryptominer which uses the CPU power of the victims computer to calculate crypto currency for the attacker as described by Rüth et al. \cite{rueth2018digging}. Cryptominers would benefit greatly when they could expand their runtime to background tabs. Another example for malicious use of background execution is the participation in a browser based botnet as outlined by Grossmann and Johansen in \cite{grossmann2013million}. Likewise, this attack scenario benefits from constant ability to perform background execution, too. However, it is not clear if the energy-saving mechanisms put in place by modern browsers prevent these kind of attacks or if script execution in background tabs is as utilizable as in foreground tabs.
 
-  Other research shows that
+  \section{Goals of our research}
 
+  The goals of our research are threefold: First, we want to analyse how browsers throttle tasks in background tabs. Second, we try to find methods to circumenvent the throttling mechanisms put in place by browser vendors. And third, we analyse popular web sites to confirm whether these methods are used to actively or inadvertently circumvent the browser throttling. However, we are not investigating what these web sites do in the background, merely if and how long background tasks are executed.
 
-  In this thesis we analyse if the throttling mechanisms employed by browser vendors can be circumvented, so that web sites which are not visible to the browser can gain code execution for arbitrary time. We compare the different throttling mechanisms between desktop and mobile browsers and we trace popular websites to see if the found cirumvention methods are actively used in the wild.
-
-
-  At the same time the revenue model for many websites is advertising. Websites include third party JavaScript from ad networks, which display ads and track impressions. The included code can be controlled by the advertiser. For a malicous entity, it is therefore possible to include JavaScript on reputable websites just by paying for the ad impression. This method of distribution for malicous script is known as malvertising\cite{wiki:malvertising}.
- 
-
-  Nevertheless, there are numerous activities which malicous entities could perform with access to a web site with high number of visitors.
-
-  \begin{itemize}
-  \item The attacker could inject a browser crypto-currency miner to convert electricity of the website visitors into crypto currency. The existance of crypto currencies such as Monero, which uses proof of work algorithm, which is inefficient to calculate on custom hardware, makes the browser a viable target for such mining. Existing implementations of Monero miners implemented in web assemlby are available for this attack.
-  \item The browser could be used as a compute node in a botnet, which can be used for DDoS attacks or for cracking hashed passwords. Grossman et al.\cite{grossmann2013million} show that these attacks can be used with standard web technologies and not exploiting any weaknesses.
-  \item The computer of the visitor itself could be compromised by using exploits of the browser or the underlying system itself. Attacks which exploit hardware weaknesses such as Spectre\cite{Kocher2018spectre}, which could allow an attacker to read memory space of other browser tabs, could expose sensitive informations such as passwords or banking information of the uses. Rowhammer\cite{rowhammer} attacks could even persistently infect the users system. These exploits usually need quite some time to be successful and could benefit from constant background execution in a background browser tab.
-  \end{itemize}
-
-  \section{Goals}
-
-  The goals of this thesis are threefold: First, we want to analyse how browsers throttle tasks in background tabs. Second, we try to find methods to circumenvent the throttling mechanisms put in place. And third, we analyse popular web sites to confirm whether these methods are used to actively or inadvertently circumvent the browser throttling. However, we are not investigating what these web sites do in the background, merely if and how long background tasks are executed. With this research, we contribute the answer to the question whether the current energy-saving mechanisms implemented by browsers are suitable to protect users from malicious background activites on rogue web sites.
+  With this research, we contribute the answer to the question whether the current energy-saving mechanisms implemented by browsers are suitable to protect users from malicious background activites on rogue web sites or how the energy-saving mechanisms can be circumvented for malicious use.
 
   \section{Organization of this thesis}
 
@@ -260,6 +245,19 @@ function doNetworkRequest() {
   
   \newpage
   \chapter{Related work}
+
+
+  
+  At the same time the revenue model for many websites is advertising. Websites include third party JavaScript from ad networks, which display ads and track impressions. The included code can be controlled by the advertiser. For a malicous entity, it is therefore possible to include JavaScript on reputable websites just by paying for the ad impression. This method of distribution for malicous script is known as malvertising\cite{wiki:malvertising}.
+ 
+
+  Nevertheless, there are numerous activities which malicous entities could perform with access to a web site with high number of visitors.
+
+  \begin{itemize}
+  \item The attacker could inject a browser crypto-currency miner to convert electricity of the website visitors into crypto currency. The existance of crypto currencies such as Monero, which uses proof of work algorithm, which is inefficient to calculate on custom hardware, makes the browser a viable target for such mining. Existing implementations of Monero miners implemented in web assemlby are available for this attack.
+  \item The browser could be used as a compute node in a botnet, which can be used for DDoS attacks or for cracking hashed passwords. Grossman et al.\cite{grossmann2013million} show that these attacks can be used with standard web technologies and not exploiting any weaknesses.
+  \item The computer of the visitor itself could be compromised by using exploits of the browser or the underlying system itself. Attacks which exploit hardware weaknesses such as Spectre\cite{Kocher2018spectre}, which could allow an attacker to read memory space of other browser tabs, could expose sensitive informations such as passwords or banking information of the uses. Rowhammer\cite{rowhammer} attacks could even persistently infect the users system. These exploits usually need quite some time to be successful and could benefit from constant background execution in a background browser tab.
+  \end{itemize}
 
   \textbf{TODO: restructure to formal text instead of bullet points}
 
@@ -406,8 +404,9 @@ const measurement = new Measurement(function setup() {
 
   We analysed this method of scheduling tasks with our measurement framework and we observed that all desktop browsers do not throttle or otherwise limit the execution of task created via \texttt{postMessage()}. This allows a web site to fully utilize background execution. Chrome and Firefox allow this method to run indefinitely. However, we observed that Safari detects web pages using significant energy and terminates the complete page after around eight minutes in the background. Figure \ref{fig:significant-energy} shows how Safari is communicating the termination of a web site to the user. However, we could not use this method to achieve background execution in Mobile Safari, as it completely suspends the execution of tasks of background tabs.
 
-   \begin{figure}
-      \includegraphics[width=\textwidth]{images/significant-energy.png}
+  \begin{figure}
+    \centering
+      \includegraphics[width=0.5\textwidth]{images/significant-energy.png}
     \caption{Safari showing a warning about a web site after it was termined because of significant energy usage}
     \label{fig:significant-energy}
   \end{figure}
@@ -478,11 +477,11 @@ const measurement = new Measurement(function setup() {
   
   \section{Automated tracing of background execution}
 
-  To analyse the background execution of a web site we perform the following steps: First, we open a new Chrome instance and start the browsers internal web profiling. Second, we open the web site and wait for the initial load to complete. Third, we move the web site to the background by opening a new empty browser tab to activate the browser throttling mechanisms. We profile the page for a 15 minutes time period. After the 15 minutes are completed, we close the browser instance and save the web site trace for later analysis.
+  To analyse the background execution of a web site we perform the following steps: First, we open a new Chrome instance and start the web profiling via the included DevTools. \cite{chrome-devtools-performance-reference} shows how the DevTools profiling is invoked and how to recording can be analysed. Second, we open the web site and wait for the initial load to complete. Third, we move the web site to the background by opening a new empty browser tab to activate the browser throttling mechanisms. We wait for 15 minutes to record the background execution of the web site. After the 15 minutes elapsed, we stop the profiling process and close the browser instance. The recorded web site trace is saved for later analysis.
   
-  The generated trace file consists of a list of events, a corresponding timestamp and the thread and process on which the event took place. An example for an event which is traces is the beginning or the end of a JavaScript task, the receiving of a network response or user interaction events. With this information we can reconstruct the timeline of tasks including the stack traces and calculate the total duration of the background execution.
+  The generated trace file consists of metadata about the profiling and a list of trace events. Each trace event in turn consists of an event type, the timestamp when the event happened, the thread and process id on which the event took place and potential extra data for some types of events. An example for an event is the execution of a task from the task queue, the receiving of a network response or user interaction events. The documentation for this trace format is available under \cite{trace-event-format} and \cite{timeline-event-reference} provides a reference about the different types of events and what they represent. With this information we can reconstruct the timeline of executed tasks including the stack traces and the execution contexts.
     
-  To automate the tracing we used Puppeteer \cite{pptr}. Puppeteer is a library which uses the Chrome DevTools Protocol \cite{chrome-devtools-protocol} to control a Chrome instance. The DevTools Protocol is also used by the Chrome DevTools which are bundled with Chrome. It allows remote control of the browser and access to the browser interals.
+  To automate the tracing we used Puppeteer \cite{pptr}. Puppeteer is a library which uses the Chrome DevTools Protocol \cite{chrome-devtools-protocol} to control a Chrome instance. The DevTools Protocol is also used by the Chrome DevTools which are bundled with Chrome. It allows remote control of the browser and provides an API for starting and stopping web site profiles.
 
   Another capability of puppeteer is to inject custom JavaScript code before a web site is rendered. Due to the dynamic nature of JavaScript, it is possible to override the implementation of every existing function. We use this feature in our injected script to hook the API for creating Web workers, opening a WebSocket and using \texttt{postMessage()} calls, to record their respective usage for our tracing. A simplified example how the hooking is performed looks like this:
 
@@ -501,7 +500,7 @@ window.postMessage = function () {
 
   With the combination of he web site trace and the recodings of the hooked functions we can determine which tasks the web site was executing while it was in the background and which methods it used for scheduling the tasks. This allows for a detailed analysis of a single web site. However, to get a better picture of how a large number of web sites in general behave in the background, we need to find a way to compare and aggregate the results of the multiple traces.
 
-  To compare the result of two traces, it is beneficial to have a single score for each web site. We propose to use the average CPU usage triggered by scripting in the background to act as this score. The average CPU usage score can be calculated from the trace file generated by the web profiler. To calculate the CPU usage time for scripting we use the sum of all durations of all tasks executed in the main as well as in all potentially spawned worker contexts. We use the wall clock time for this measurement, because it is a suitable replacement for CPU time in a scenario where the recording machine is not under any other substential load from other processes. Additionally, this is also the same method used by Chrome for the budget-based throttling calculation \cite{chrome-background-tabs}. We can calculate the CPU usage score with the following formula:
+  To compare the result of two traces, it is beneficial to have a single score for each web site. We propose to use the average CPU usage triggered by scripting in the background to act as this score. The average CPU usage score can be calculated from the trace file generated by the web profiler. To calculate the CPU usage time for scripting we use the sum of all durations of all tasks executed in the main as well as in all potentially spawned worker contexts. We use the wall clock time for this measurement, because it is a suitable replacement for CPU time in a scenario where the recording machine is not under any other substential load from other processes. Additionally, this is also the same method used by Chrome for the budget-based throttling calculation \cite{chrome-background-tabs}. We can calculate the CPU usage score with the data extracted from the web site trace and the following formula:
 
   \begin{equation*}
     \text{CPU}_{avg} = \frac{ \sum_{ c \in C } \sum_{ t \in T_c } r_t }{ t_r }
@@ -540,7 +539,7 @@ window.postMessage = function () {
         \bottomrule
       \end{tabular}
     \end{adjustbox}
-    \caption{Top ten web sites with highest average CPU usage}
+    \caption{Top ten web sites with highest average CPU usage score}
     \label{tab:top-ten-cpu-usage}
   \end{table}
 
@@ -570,12 +569,13 @@ window.postMessage = function () {
   
   Some news related web sites reload the complete window after a certain amount of time to show the latest content of the home page when a user leaves the tab open for a long time. This is a low effort solution to always show the current content without the need for dynamic content replacement scripts and can be easily integrated into existing content management systems. A side effect of reloading the page is that the background timer throttling is reset and the first ten seconds after the page reload are not subject to budget limits again. As these news related web site often also include third party ad network scripts, these scripts also have to be executed again. The first seconds after the page was loaded often is the most CPU intensive period during the whole runtime of the web site. During our analysis we observed that web sites reloading themselves after a certain amount of time often exceed the timer budget limits.
   
-  
+  To summarize, we did not find web sites in our sample that actively do abuse the limit circumventing methods to gain background execution. However, even though these web sites were not visible to the user, they did consume non trivial amounts of CPU time. We claim, that most of the background execution performed from these web sites were not necessary to function correctly. Web site creators should constrain the background execution of their web site to only providing functionallity expected and wanted by users.
+
   
   \newpage
   \chapter{Discussion and conclusion}
 
-  As we have concluded in chapter \ref{chap:analysis}, the browser throttling mechanisms do not protect users from malicous web sites, which actively try to utilize background execution. They can only be regarded as energy conserving measures for well-behaving web sites. We also showed in chapter \ref{chap:tracing} that the circumvention methods are indeed used by popular web sites.
+  As we have concluded in chapter \ref{chap:analysis}, the browser throttling mechanisms do not protect users from malicous web sites, which actively try to utilize background execution. They can only be regarded as energy conserving measures for well-behaving web sites. We also showed in chapter \ref{chap:tracing} that the circumvention methods are used by popular web sites.
 
   To protect users from unwanted CPU usage of background tabs, browsers should suspend tabs completely when they are not visible to the user. This goal is already acknowledged from Chrome developers as stated in \cite{chrome-background-tabs-roadmap}. The reason why this change is not yet implemented can be attributed to the missing alternative APIs for legitimate use of background timers. Suspending all background tabs would break these use cases, in which users expect the page to update in the background. Safari implemented a good interim solution by detecting high energy consumption of background tabs and terminating them when they reach a certain threshold. This solution allows web site to utilize background execution but only if it does not impact battery life too much and it protects users from continuous CPU usage and battery drain from web miners or other CPU expensive workloads.
 
